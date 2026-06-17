@@ -249,7 +249,17 @@ jobs:
         CHROME_BIN: /usr/bin/google-chrome
 
     # ─────────────────────────────────────────────────────────────────
-    # Step 12: Upload debug artifacts on failure
+    # Step 12: Print Server Logs on Failure
+    # ─────────────────────────────────────────────────────────────────
+    - name: Cat Server Logs on Failure
+      if: failure()
+      run: |
+        echo "=================== SERVER LOGS ==================="
+        cat uvicorn.log
+        echo "==================================================="
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 13: Upload debug artifacts on failure
     # ─────────────────────────────────────────────────────────────────
     - name: Upload Failure Logs
       if: failure()
