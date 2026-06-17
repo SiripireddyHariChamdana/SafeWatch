@@ -1,0 +1,84 @@
+name: SafeWatch Security Code Review
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # ===================================================================
+  # JOB: Static Security Analysis — Verify All 18 Vulnerability Findings
+  # ===================================================================
+  security-review:
+    name: AppSec Static Analysis (18 Findings, 37 Tests)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Display Repository Structure
+      run: |
+        echo "=== SafeWatch Repository Structure ==="
+        find . -type f -name "*.py" | grep -v __pycache__ | sort
+        echo ""
+        echo "=== Vulnerability Test Results folder ==="
+        ls -la "Vulnerability Test Results/"
+
+    - name: Run Security Code Review Tests (37 tests)
+      run: |
+        echo "=================================================="
+        echo " SAFEWATCH SECURITY CODE REVIEW -- GITHUB ACTIONS"
+        echo "=================================================="
+        python -m pytest tests/test_security_review.py \
+          --tb=short \
+          -v \
+          --no-header \
+          --color=yes \
+          -p no:warnings
+      env:
+        PYTHONDONTWRITEBYTECODE: "1"
+        PYTHONIOENCODING: "utf-8"
+
+    - name: Print Security Review Summary
+      if: always()
+      run: |
+        echo ""
+        echo "=================================================="
+        echo " VULNERABILITY FINDINGS SUMMARY"
+        echo "=================================================="
+        echo " 2x CRITICAL  | VULN-01 Hardcoded SECRET_KEY"
+        echo "               | VULN-02 Test-account auth bypass"
+        echo " 5x HIGH       | VULN-03 Hardcoded DB password"
+        echo "               | VULN-04 No rate limiting on auth"
+        echo "               | VULN-05 OTP codes logged to console"
+        echo "               | VULN-06 User enumeration via forgot-pwd"
+        echo "               | VULN-07 OTP codes never expire"
+        echo " 7x MEDIUM     | VULN-08 CORS wildcard methods/headers"
+        echo "               | VULN-09 Unbounded request body"
+        echo "               | VULN-10 No logout / token revocation"
+        echo "               | VULN-11 Phone numbers exposed in API"
+        echo "               | VULN-12 Swagger UI exposed in production"
+        echo "               | VULN-13 hazard_type unvalidated string"
+        echo "               | VULN-14 SOS trigger no cooldown/limit"
+        echo " 4x LOW        | VULN-15 Contact deletion by index"
+        echo "               | VULN-16 Unbounded limit query param"
+        echo "               | VULN-17 No password minimum length"
+        echo "               | VULN-18 No security response headers"
+        echo "=================================================="
+        echo " Full report: Vulnerability Test Results/executive_summary.md"
+        echo "=================================================="
+
+    - name: Upload Security Report as Artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: safewatch-security-report
+        path: "Vulnerability Test Results/executive_summary.md"
+        retention-days: 30
