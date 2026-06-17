@@ -1,0 +1,26 @@
+# Core API Framework
+fastapi==0.104.1
+uvicorn==0.24.0
+
+# Database & ORM
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+
+# Configuration & Environment
+python-dotenv==1.0.0
+
+# Data Validation
+pydantic[email]==2.5.0
+
+# Security
+bcrypt==4.1.1
+pyjwt==2.8.0
+python-multipart==0.0.6
+
+# gRPC Support
+grpcio==1.60.0
+grpcio-status==1.60.0
+
+# External Services
+firebase-admin==6.3.0
+twilio==9.0.4

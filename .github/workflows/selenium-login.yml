@@ -1,0 +1,260 @@
+name: SafeWatch E2E CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # ===================================================================
+  # JOB 1: Python API Simulation Test (fast, no browser needed)
+  # ===================================================================
+  api-simulation:
+    name: API Simulation Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: safewatch
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+          libpq-dev python3-dev build-essential
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: requirements.txt
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --no-cache-dir -r requirements.txt
+
+    - name: Create .env Configuration
+      run: |
+        echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/safewatch" > .env
+        echo "SECRET_KEY=ci-pipeline-secure-secret-key-12345"                      >> .env
+        echo "TOKEN_EXPIRE_MINUTES=60"                                              >> .env
+        echo "ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000"          >> .env
+        echo "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}"               >> .env
+        echo "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}"                  >> .env
+        echo "TWILIO_FROM_NUMBER=${{ secrets.TWILIO_FROM_NUMBER }}"                >> .env
+        echo "GMAIL_USER=${{ secrets.GMAIL_USER }}"                                >> .env
+        echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}"                >> .env
+        # Reconstruct Firebase service account key from GitHub Secret
+        if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > backend/ServiceAccountKey.json
+          echo "[+] Firebase service account key restored from GitHub Secret."
+        else
+          echo "[!] FIREBASE_SERVICE_ACCOUNT_JSON not set — FCM notifications disabled in CI."
+        fi
+
+    - name: Launch FastAPI Server
+      run: python run.py > uvicorn.log 2>&1 &
+      env:
+        PYTHONUNBUFFERED: "1"
+        CI: "true"
+
+    - name: Wait for Backend Health Check
+      run: |
+        echo "Checking backend health..."
+        for i in {1..20}; do
+          if curl -sf http://localhost:8000/api/health | grep -q "healthy"; then
+            echo "[+] FastAPI Server is healthy!"
+            exit 0
+          fi
+          echo "[-] Attempt $i/20 — waiting 3s..."
+          sleep 3
+        done
+        echo "[!] Server failed to start."
+        cat uvicorn.log
+        exit 1
+
+    - name: Run API Simulation Tests
+      run: python tests/simulate_safewatch.py
+
+    - name: Upload Server Logs on Failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-simulation-failure-logs
+        path: uvicorn.log
+        retention-days: 7
+
+  # ===================================================================
+  # JOB 2: Selenium E2E Browser Tests
+  # ===================================================================
+  e2e-testing:
+    name: Setup Environment and Run E2E Web Tests
+    runs-on: ubuntu-latest
+    needs: api-simulation   # only run E2E if API tests pass
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: safewatch
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    # ─────────────────────────────────────────────────────────────────
+    # Step 1: Checkout repository code
+    # ─────────────────────────────────────────────────────────────────
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 2: System packages for psycopg2 + Python build tools
+    # ─────────────────────────────────────────────────────────────────
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+          libpq-dev python3-dev build-essential
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 3: Set up Python with pip cache
+    # ─────────────────────────────────────────────────────────────────
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: requirements.txt
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 4: Install Python backend dependencies
+    # ─────────────────────────────────────────────────────────────────
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --no-cache-dir -r requirements.txt
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 5: Set up Node.js
+    # ─────────────────────────────────────────────────────────────────
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 6: Verify Chrome is available on runner
+    # ─────────────────────────────────────────────────────────────────
+    - name: Verify Chrome Installation
+      run: |
+        google-chrome --version
+        which chromedriver && chromedriver --version || echo "[i] chromedriver not in PATH, will use npm package"
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 7: Install Node/Selenium test dependencies
+    #         Use npm install (not npm ci) since no package-lock.json
+    # ─────────────────────────────────────────────────────────────────
+    - name: Install Node Dependencies
+      working-directory: frontend/selenium-tests
+      run: |
+        npm install
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 8: Write CI environment variables
+    # ─────────────────────────────────────────────────────────────────
+    - name: Create .env Configuration
+      run: |
+        echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/safewatch" > .env
+        echo "SECRET_KEY=ci-pipeline-secure-secret-key-12345"                      >> .env
+        echo "TOKEN_EXPIRE_MINUTES=60"                                              >> .env
+        echo "ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000"          >> .env
+        echo "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}"               >> .env
+        echo "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}"                  >> .env
+        echo "TWILIO_FROM_NUMBER=${{ secrets.TWILIO_FROM_NUMBER }}"                >> .env
+        echo "GMAIL_USER=${{ secrets.GMAIL_USER }}"                                >> .env
+        echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}"                >> .env
+        # Reconstruct Firebase service account key from GitHub Secret
+        if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > backend/ServiceAccountKey.json
+          echo "[+] Firebase service account key restored from GitHub Secret."
+        else
+          echo "[!] FIREBASE_SERVICE_ACCOUNT_JSON not set — FCM notifications disabled in CI."
+        fi
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 9: Launch FastAPI + Uvicorn backend server
+    # ─────────────────────────────────────────────────────────────────
+    - name: Launch FastAPI Server
+      run: |
+        python run.py > uvicorn.log 2>&1 &
+        echo "SERVER_PID=$!" >> $GITHUB_ENV
+      env:
+        PYTHONUNBUFFERED: "1"
+        CI: "true"
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 10: Poll backend until healthy
+    # ─────────────────────────────────────────────────────────────────
+    - name: Wait for Backend Health Check
+      run: |
+        echo "Checking backend health status..."
+        for i in {1..20}; do
+          if curl -sf http://localhost:8000/api/health | grep -q "healthy"; then
+            echo "[+] FastAPI Server is up and healthy!"
+            exit 0
+          fi
+          echo "[-] Waiting for server on port 8000... (attempt $i/20)"
+          sleep 3
+        done
+        echo "[!] FastAPI server failed to boot within timeout."
+        echo "=================== SERVER LOGS ==================="
+        cat uvicorn.log
+        echo "==================================================="
+        exit 1
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 11: Execute JavaScript Selenium E2E login/signup test
+    # ─────────────────────────────────────────────────────────────────
+    - name: Run E2E Selenium Tests
+      working-directory: frontend/selenium-tests
+      run: |
+        npm run login
+      env:
+        TEST_URL: http://localhost:8000/static/index.html
+        CHROME_BIN: /usr/bin/google-chrome
+
+    # ─────────────────────────────────────────────────────────────────
+    # Step 12: Upload debug artifacts on failure
+    # ─────────────────────────────────────────────────────────────────
+    - name: Upload Failure Logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-failure-logs
+        path: uvicorn.log
+        retention-days: 7

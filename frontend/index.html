@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFEWATCH - Professional Safety Monitoring System</title>
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Leaflet.js Mapping CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="accent-blue">
+    <div id="cyber-glow-bg"></div>
+
+    <!-- MAIN VIEWPORT CONTAINER -->
+    <main id="app-viewport">
+
+        <!-- SCREEN 1: LOGIN -->
+        <section id="screen-login" class="app-screen active">
+            <div class="glass-card auth-container">
+                <div class="brand-header">
+                    <div class="logo-shield"></div>
+                    <h1 class="orbitron-heading neon-text-blue">SAFEWATCH</h1>
+                    <p class="subtitle">Secure Gateway Protocol</p>
+                </div>
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-email">SECURE EMAIL OR PHONE NUMBER</label>
+                        <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                        <input type="text" id="login-email" class="critical-input" required placeholder="name@example.com or +1234...">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">ACCESS CREDENTIAL PIN / PASSWORD</label>
+                        <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                        <input type="password" id="login-password" class="critical-input" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="login-button" class="cyber-btn btn-blue font-orbitron">INITIALIZE ACCESS</button>
+                </form>
+                <div class="auth-footer" style="display: flex; flex-direction: column; gap: 8px;">
+                    <p>No active safety profile? <span id="to-signup" class="neon-text-purple interactive-link">Enroll Account</span></p>
+                    <p><span id="to-forgot-password" class="neon-text-blue interactive-link" style="font-size: 0.9em;">Forgot Password?</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 2: SIGNUP -->
+        <section id="screen-signup" class="app-screen">
+            <div class="glass-card auth-container signup-box">
+                <div class="brand-header">
+                    <h1 class="orbitron-heading neon-text-purple">PROVISION SAFETY BEACON</h1>
+                    <p class="subtitle">Enroll New Operational Profile</p>
+                </div>
+                <form id="signup-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="signup-email">SECURE EMAIL IDENTIFIER (OPTIONAL)</label>
+                        <input type="email" id="signup-email" class="critical-input" placeholder="name@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-phone">PERSONAL PHONE NUMBER (OPTIONAL)</label>
+                        <input type="text" id="signup-phone" class="critical-input" placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">ACCESS CREDENTIAL PIN / PASSWORD</label>
+                        <input type="password" id="signup-password" class="critical-input" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-name">FULL LEGAL NAME</label>
+                        <input type="text" id="signup-name" class="critical-input" required placeholder="Jane Doe">
+                    </div>
+                    <div class="grid-2-col">
+                        <div class="form-group">
+                            <label for="signup-blood">BLOOD GROUP</label>
+                            <select id="signup-blood" class="critical-input select-styled">
+                                <option value="O+">O Positive (O+)</option>
+                                <option value="O-">O Negative (O-)</option>
+                                <option value="A+">A Positive (A+)</option>
+                                <option value="A-">A Negative (A-)</option>
+                                <option value="B+">B Positive (B+)</option>
+                                <option value="B-">B Negative (B-)</option>
+                                <option value="AB+">AB Positive (AB+)</option>
+                                <option value="AB-">AB Negative (AB-)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-emergency-phone">EMERGENCY SPEED PHONE</label>
+                            <input type="text" id="signup-emergency-phone" class="critical-input" placeholder="+1-555-0199" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-address">HOME BASE ADDRESS</label>
+                        <textarea id="signup-address" class="critical-input textarea-styled" rows="2" placeholder="123 Safe Haven Road..." required></textarea>
+                    </div>
+                    <button type="submit" class="cyber-btn btn-purple font-orbitron">DEPLOY PROFILE</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Already provisioned? <span id="to-login" class="neon-text-blue interactive-link">Return to Gateway</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN: VERIFY ACCOUNT -->
+        <section id="screen-verify" class="app-screen">
+            <div class="glass-card auth-container">
+                <div class="brand-header">
+                    <h1 class="orbitron-heading neon-text-purple">VERIFY SECURITY PROTOCOL</h1>
+                    <p class="subtitle">Enter the 6-Digit Verification Code</p>
+                </div>
+                <form id="verify-form" class="auth-form">
+                    <input type="hidden" id="verify-identifier">
+                    <div class="form-group">
+                        <label for="verify-code">6-DIGIT CODE</label>
+                        <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                        <input type="text" id="verify-code" class="critical-input text-center font-orbitron" required maxlength="6" placeholder="000000">
+                    </div>
+                    <button type="submit" class="cyber-btn btn-purple font-orbitron">VALIDATE CODE</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Incorrect details? <span id="verify-to-login" class="neon-text-blue interactive-link">Return to Gateway</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN: FORGOT PASSWORD -->
+        <section id="screen-forgot" class="app-screen">
+            <div class="glass-card auth-container">
+                <div class="brand-header">
+                    <h1 class="orbitron-heading neon-text-blue">RECOVER CREDENTIALS</h1>
+                    <p class="subtitle">Request Password Reset Code</p>
+                </div>
+                <form id="forgot-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="forgot-identifier">SECURE EMAIL OR PHONE NUMBER</label>
+                        <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                        <input type="text" id="forgot-identifier" class="critical-input" required placeholder="name@example.com or +1234...">
+                    </div>
+                    <button type="submit" class="cyber-btn btn-blue font-orbitron">REQUEST RESET CODE</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Remember details? <span id="forgot-to-login" class="neon-text-blue interactive-link">Return to Gateway</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN: RESET PASSWORD -->
+        <section id="screen-reset" class="app-screen">
+            <div class="glass-card auth-container">
+                <div class="brand-header">
+                    <h1 class="orbitron-heading neon-text-red">RESET CREDENTIALS</h1>
+                    <p class="subtitle">Enter reset code and new credentials</p>
+                </div>
+                <form id="reset-form" class="auth-form">
+                    <input type="hidden" id="reset-identifier">
+                    <div class="form-group">
+                        <label for="reset-code">6-DIGIT RESET CODE</label>
+                        <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                        <input type="text" id="reset-code" class="critical-input text-center font-orbitron" required maxlength="6" placeholder="000000">
+                    </div>
+                    <div class="form-group">
+                        <label for="reset-new-password">NEW CREDENTIAL PIN / PASSWORD</label>
+                        <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                        <input type="password" id="reset-new-password" class="critical-input" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="cyber-btn btn-red font-orbitron">UPDATE ACCESS PIN</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Go back? <span id="reset-to-login" class="neon-text-blue interactive-link">Return to Gateway</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: MASTER COMMAND HUB (DASHBOARD) -->
+        <section id="screen-dashboard" class="app-screen">
+            <header class="dashboard-header glass-card">
+                <div class="header-logo">
+                    <div class="pulse-indicator-green" id="hub-status-badge"></div>
+                    <h2 class="orbitron-heading neon-text-blue" id="hub-logo-text">SAFEWATCH HUB</h2>
+                    <span class="status-pill active-glow">SYSTEM ACTIVE</span>
+                </div>
+                <div class="header-profile-telemetry">
+                    <div id="btn-dashboard-profile" class="header-avatar-circle cursor-pointer">👤</div>
+                    <span id="profile-name" class="name-badge cursor-pointer">OPERATOR: SECURE</span>
+                    <button id="btn-logout" class="cyber-btn-outline font-orbitron btn-small btn-red">DISCONNECT</button>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                
+                <!-- PRIMARY HIGH-PRIORITY ACTION PAIR -->
+                <!-- CARD: LIVE TRACKING -->
+                <div class="glass-card map-card col-span-2">
+                    <div class="card-header">
+                        <h3 class="orbitron-heading neon-text-blue font-small">LIVE GEOMETRIC TRACKING MAP</h3>
+                        <button id="btn-add-map-hazard" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow">REPORT LOCAL HAZARD</button>
+                    </div>
+                    <div id="live-gps-map"></div>
+                </div>
+
+                <!-- CARD: SOS ALERT DISPATCH -->
+                <div class="glass-card sos-card">
+                    <div class="card-header">
+                        <h3 class="orbitron-heading neon-text-red font-small">SOS EMERGENCY BEACON</h3>
+                    </div>
+                    <div class="sos-action-wrapper">
+                        <button id="btn-sos-trigger" class="sos-pulsing-button font-orbitron">
+                            <span class="sos-label">SOS</span>
+                            <span class="sos-sublabel">PRESS TO DISPATCH</span>
+                        </button>
+                    </div>
+                    <div class="sos-status-label font-orbitron text-center text-muted">STEALTH DISPATCH ON TAP</div>
+                </div>
+
+                <!-- TELEMETRY METRIC STRIP -->
+                <div class="glass-card telemetry-card col-span-3">
+                    <div class="telemetry-grid">
+                        <div class="telemetry-item">
+                            <span class="telemetry-label font-orbitron">GPS SPEED MONITOR</span>
+                            <div class="telemetry-value neon-text-blue"><span id="tel-speed">0.0</span> <span class="unit">km/h</span></div>
+                            <div class="telemetry-bar-bg"><div id="bar-speed" class="telemetry-bar-fill blue-bg" style="width: 5%"></div></div>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="telemetry-label font-orbitron">BATTERY SNITCH</span>
+                            <div class="telemetry-value neon-text-purple"><span id="tel-battery">--</span> <span class="unit">%</span></div>
+                            <div class="telemetry-bar-bg"><div id="bar-battery" class="telemetry-bar-fill purple-bg" style="width: 80%"></div></div>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="telemetry-label font-orbitron">BEACON SIGNAL dBm</span>
+                            <div class="telemetry-value neon-text-green"><span id="tel-signal">92</span> <span class="unit">dBm</span></div>
+                            <div class="telemetry-bar-bg"><div id="bar-signal" class="telemetry-bar-fill green-bg" style="width: 90%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECONDARY FUNCTIONAL TOOLS GRID -->
+                <!-- TOOL 1: SAFETY DEAD MAN SWITCH -->
+                <div id="card-safety-timer" class="glass-card tool-card interactive-card border-blue">
+                    <div class="tool-icon timer-icon"></div>
+                    <h4 class="orbitron-heading card-tool-title">DEAD MAN'S SWITCH</h4>
+                    <p class="tool-desc">Digital countdown switch triggering program SOS upon operator timeout.</p>
+                    <div class="tool-status font-orbitron text-blue" id="timer-tool-status">STATUS: MONITOR STANDBY</div>
+                </div>
+
+                <!-- TOOL 2: FAMILY NETWORK HUB -->
+                <div id="card-emergency-circle" class="glass-card tool-card interactive-card border-purple">
+                    <div class="tool-icon circle-icon"></div>
+                    <h4 class="orbitron-heading card-tool-title">FAMILY CONTACTS</h4>
+                    <p class="tool-desc">Send circle invitations, approve connection handshakes, and manage speed dials.</p>
+                    <div class="tool-status font-orbitron text-purple" id="circle-tool-status">0 CONNECTED NODES</div>
+                </div>
+
+                <!-- TOOL 3: PROACTIVE FAKE CALL -->
+                <div id="card-fake-call" class="glass-card tool-card interactive-card border-purple">
+                    <div class="tool-icon fakecall-icon"></div>
+                    <h4 class="orbitron-heading card-tool-title">FAKE CALL DETERRENT</h4>
+                    <p class="tool-desc">Trigger highly realistic smartphone layouts with voice playbacks and loops.</p>
+                    <div class="tool-status font-orbitron text-purple">DETERRENCE CADENCE: READY</div>
+                </div>
+
+                <!-- TOOL 5: SAFEZONE MANAGER -->
+                <div id="card-safezone-manager" class="glass-card tool-card interactive-card border-purple">
+                    <div class="tool-icon zone-icon"></div>
+                    <h4 class="orbitron-heading card-tool-title">SAFEZONE GEODISTANCE</h4>
+                    <p class="tool-desc">Configure a 500m geofence. Logs database violations if breached.</p>
+                    <div class="tool-status font-orbitron text-purple" id="safezone-tool-status">GEOFENCE INACTIVE</div>
+                </div>
+
+                <!-- TOOL 6: TRAVEL LOGS TIMELINE -->
+                <div id="card-travel-history" class="glass-card tool-card interactive-card border-blue">
+                    <div class="tool-icon history-icon"></div>
+                    <h4 class="orbitron-heading card-tool-title">TRAVEL TIMELINE</h4>
+                    <p class="tool-desc">Review a timeline log of past telemetry nodes and safety scores.</p>
+                    <div class="tool-status font-orbitron text-blue" id="history-tool-status">0 LOCATION LOGS</div>
+                </div>
+
+                <!-- TOOL 7: MASTER SETTINGS CONFIG -->
+                <div id="card-master-settings" class="glass-card tool-card interactive-card border-purple col-span-2">
+                    <div class="tool-icon settings-icon"></div>
+                    <h4 class="orbitron-heading card-tool-title">SYSTEM PREFERENCES & PANIC TRIGGERS</h4>
+                    <p class="tool-desc">Configure accelerometer shake sensors, hardware keys (Shift+S+S), AMOLED black grids, and panic database wipes.</p>
+                    <div class="tool-status font-orbitron text-purple">INTELLIGENCE CONFIGURATION GATEWAY</div>
+                </div>
+
+                <!-- WIDGET: DECORATIVE HEATMAP RADAR -->
+                <div class="glass-card tool-card border-blue scanner-container">
+                    <div class="radar-scan-circle">
+                        <div class="radar-sweep-line"></div>
+                        <div class="radar-ping node-1"></div>
+                        <div class="radar-ping node-2"></div>
+                    </div>
+                    <h4 class="orbitron-heading card-tool-title text-center mt-10">BEACON HEATMAP</h4>
+                    <p class="tool-desc text-center">Continuous scanning of hazard zones and peer threat alerts.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SCREEN 4: USER PROFILE MANAGER -->
+        <section id="screen-profile" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-blue">TELEMETRY OPERATOR DEPLOYMENT</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+                </div>
+                <form id="profile-form" class="auth-form">
+                    <div class="profile-avatar-selector-section">
+                        <div class="form-group">
+                            <label>OPERATOR BEACON IDENTITY AVATAR</label>
+                            <div class="avatar-badge-strip">
+                                <div class="avatar-badge active" data-id="avatar-shield">🛡️ SHIELD</div>
+                                <div class="avatar-badge" data-id="avatar-eye">👁️ BEACON</div>
+                                <div class="avatar-badge" data-id="avatar-falcon">🦅 FALCON</div>
+                                <div class="avatar-badge" data-id="avatar-ghost">👻 STEALTH</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2-col-equal">
+                        <div class="form-group">
+                            <label for="profile-name-input">OPERATOR FULL LEGAL NAME</label>
+                            <input type="text" id="profile-name-input" class="critical-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-phone-input">EMERGENCY HANDSHAKE PHONE</label>
+                            <input type="text" id="profile-phone-input" class="critical-input" required>
+                        </div>
+                    </div>
+
+                    <div class="grid-2-col-equal">
+                        <div class="form-group">
+                            <label for="profile-email-input">REGISTERED EMAIL IDENTIFIER (LOCKED)</label>
+                            <input type="text" id="profile-email-input" class="critical-input" disabled style="opacity: 0.6;">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-blood-input">MEDICAL BLOOD CLASSIFICATION</label>
+                            <select id="profile-blood-input" class="critical-input select-styled">
+                                <option value="O+">O Positive (O+)</option>
+                                <option value="O-">O Negative (O-)</option>
+                                <option value="A+">A Positive (A+)</option>
+                                <option value="A-">A Negative (A-)</option>
+                                <option value="B+">B Positive (B+)</option>
+                                <option value="B-">B Negative (B-)</option>
+                                <option value="AB+">AB Positive (AB+)</option>
+                                <option value="AB-">AB Negative (AB-)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-address-input">OPERATIONAL LOCK HOME ADDRESS</label>
+                        <textarea id="profile-address-input" class="critical-input textarea-styled" rows="3" required></textarea>
+                    </div>
+
+                    <button type="submit" class="cyber-btn btn-blue font-orbitron">SAVE PROFILE TELEMETRY</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- SCREEN 6: SAFEZONE GEODISTANCE -->
+        <section id="screen-safezone" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-purple">SAFEZONE GEODISTANCE CONFIG</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+                </div>
+
+                <div class="safezone-layout">
+                    <!-- LEFT COLUMN: SETTING GEOFENCES -->
+                    <div class="safezone-form glass-card border-purple-thin">
+                        <h3 class="orbitron-heading font-small neon-text-blue">PERIMETER PARAMETERS</h3>
+                        <p class="desc">Lock down a 500-meter safety radius centered around your exact coordinates. Exit breaches log automatically.</p>
+                        
+                        <div class="form-group mt-15">
+                            <label>GEOFENCE CONTROL SWITCH</label>
+                            <div class="toggle-button-strip">
+                                <button id="btn-safezone-toggle" class="cyber-btn btn-purple font-orbitron btn-small">ACTIVATE GEOFENCE</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>LATITUDE AND LONGITUDE LOCK</label>
+                            <div class="grid-2-col-equal">
+                                <input type="text" id="safezone-lat" class="critical-input" readonly placeholder="Lat">
+                                <input type="text" id="safezone-lng" class="critical-input" readonly placeholder="Lng">
+                            </div>
+                        </div>
+
+                        <button id="btn-lock-safezone-node" class="cyber-btn btn-blue font-orbitron">LOCK COORDINATE ORIGIN</button>
+                    </div>
+
+                    <!-- RIGHT COLUMN: GEOPATH VIOLATIONS TABLE -->
+                    <div class="safezone-violations">
+                        <h3 class="orbitron-heading font-small neon-text-red mb-10">SAFEZONE BREACH DETECTIONS</h3>
+                        <div class="member-list-scroller" id="safezone-breach-container">
+                            <div class="empty-state">SafeZone boundary intact. Zero breach alerts logged.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 7: TRAVEL HISTORY TIMELINE -->
+        <section id="screen-history" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-blue">OPERATOR TELEMETRY HISTORY TIMELINE</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+                </div>
+
+                <div class="history-timeline-scroller">
+                    <h3 class="orbitron-heading font-small neon-text-purple mb-15">VERTICAL CHRONO LOCATION LOGS</h3>
+                    <div id="vertical-timeline-box" class="timeline-trail">
+                        <!-- Simulated Timeline Logs dynamically populate -->
+                        <div class="empty-state">No historical location logs registered. Initialize sync to store footprints.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 8: MASTER SETTINGS CONFIG -->
+        <section id="screen-settings" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-purple">SYSTEM PREFERENCES & GATEWAYS</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+                </div>
+
+                <div class="settings-layout">
+                    <!-- BLOCK 1: HARDWARE AND SHAKE TRIGGER PROTOCOLS -->
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">SECURITY ALIGNMENT TRIGGERS</h3>
+                        
+                        <div class="settings-control-row">
+                            <div class="ctrl-info">
+                                <span class="ctrl-label">SHAKE TO BROADCAST SOS</span>
+                                <span class="ctrl-desc">Emulate immediate alert dispatch if mobile accelerometer detects sharp rapid motion.</span>
+                            </div>
+                            <div class="ctrl-trigger">
+                                <button id="btn-toggle-shake" class="toggle-capsule active"></button>
+                            </div>
+                        </div>
+
+                        <div class="settings-control-row border-top-thin">
+                            <div class="ctrl-info">
+                                <span class="ctrl-label">SHIFT + S + S HOTKEY TRIGGERS</span>
+                                <span class="ctrl-desc">Intercept key event combo locally to push SOS broadcast instantly.</span>
+                            </div>
+                            <div class="ctrl-trigger">
+                                <button id="btn-toggle-hardware" class="toggle-capsule active"></button>
+                            </div>
+                        </div>
+
+                        <!-- Accelerometer Visual Shake Trigger button for desktop test -->
+                        <div class="shake-test-box mt-10">
+                            <button id="btn-shake-emulate" class="cyber-btn-outline btn-red font-orbitron btn-small w-100">SIMULATE SHAKE DISPATCH</button>
+                        </div>
+                    </div>
+
+                    <!-- BLOCK 2: SYSTEM THEME VISUALS -->
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-purple mb-10">PERSONALIZATION SUITE</h3>
+                        
+                        <div class="settings-control-row">
+                            <div class="ctrl-info">
+                                <span class="ctrl-label">AMOLED ABSOLUTE DARK MODE</span>
+                                <span class="ctrl-desc">Switch background navy gradients into pure deep space pitch black (#000000).</span>
+                            </div>
+                            <div class="ctrl-trigger">
+                                <button id="btn-toggle-amoled" class="toggle-capsule"></button>
+                            </div>
+                        </div>
+
+                        <div class="settings-control-row border-top-thin">
+                            <div class="ctrl-info">
+                                <span class="ctrl-label">THEME ACCENT FOCUS</span>
+                                <span class="ctrl-desc">Select the neon frequency highlight across the application viewport.</span>
+                            </div>
+                            <div class="accent-color-selector mt-10">
+                                <button class="accent-dot dot-blue active" data-accent="accent-blue"></button>
+                                <button class="accent-dot dot-purple" data-accent="accent-purple"></button>
+                                <button class="accent-dot dot-green" data-accent="accent-green"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOCK 3: ATOMIC DATA PANIC PURGE -->
+                    <div class="settings-block glass-card nuclear-card col-span-2">
+                        <h3 class="orbitron-heading font-small neon-text-red mb-10">ATOMIC DATA PANIC PROTOCOL</h3>
+                        <p class="desc mb-15">Activating this locks a complete wipe trigger to the backend, clearing location tracking records, violations, emergency direct dials, and video/audio vaults instantly.</p>
+                        <button id="btn-panic-wipe" class="cyber-btn btn-red font-orbitron w-100">EXECUTE PANIC PURGE WIPE</button>
+                    </div>
+
+                    <!-- BLOCK 3.5: FIREBASE CLOUD MESSAGING (FCM) CONFIGURATION -->
+                    <div class="settings-block glass-card col-span-2">
+                        <h3 class="orbitron-heading font-small neon-text-green mb-10">FIREBASE CLOUD MESSAGING (FCM) GATEWAY</h3>
+                        <p class="desc mb-10">Configure your FCM Web App credentials. SafeWatch will request notification permissions and register the device token with the database for automated peer alerts.</p>
+                        
+                        <div class="fcm-config-form">
+                            <div class="grid-2-col">
+                                <div class="form-group">
+                                    <label for="fcm-sender-id">SENDER ID (messagingSenderId)</label>
+                                    <input type="text" id="fcm-sender-id" class="critical-input" placeholder="e.g. 195352003055" value="195352003055">
+                                </div>
+                                <div class="form-group">
+                                    <label for="fcm-project-id">PROJECT ID</label>
+                                    <input type="text" id="fcm-project-id" class="critical-input" placeholder="e.g. safewatch-4ff20" value="safewatch-4ff20">
+                                </div>
+                            </div>
+                            <div class="form-group mt-10">
+                                <label for="fcm-vapid-key">WEB PUSH PUBLIC VAPID KEY</label>
+                                <input type="text" id="fcm-vapid-key" class="critical-input" placeholder="Enter VAPID key" value="BHTAcOIXuSQ_6lZuT7ydhKHECQXr9sd6VJOPFSHC2Dv3tS48gxcftOWMQnHY7SdwXKNVAquoj21kwylAow4Ivig">
+                            </div>
+                            <div class="grid-2-col mt-10">
+                                <div class="form-group">
+                                    <label for="fcm-api-key">API KEY (OPTIONAL)</label>
+                                    <input type="text" id="fcm-api-key" class="critical-input" placeholder="AIzaSy...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="fcm-app-id">APP ID (OPTIONAL)</label>
+                                    <input type="text" id="fcm-app-id" class="critical-input" placeholder="1:195352003055:web:...">
+                                </div>
+                            </div>
+                            
+                            <div class="settings-control-row mt-15 border-top-thin pt-10">
+                                <div class="ctrl-info">
+                                    <span class="ctrl-label">FCM DEVICE TOKEN STATUS</span>
+                                    <span id="fcm-token-status-badge" class="badge-status text-red" style="font-weight: bold; margin-left: 10px;">UNREGISTERED</span>
+                                    <span id="fcm-token-display" class="ctrl-desc font-mono" style="word-break: break-all; margin-top: 5px; font-size: 0.8em; color: var(--text-dim, #a0a0a0);">No active registration token.</span>
+                                </div>
+                                <div class="ctrl-trigger">
+                                    <button id="btn-fcm-register" class="cyber-btn btn-green font-orbitron btn-small">REGISTER DEVICE</button>
+                                </div>
+                            </div>
+
+                            <div class="settings-control-row mt-10 border-top-thin pt-10">
+                                <div class="ctrl-info">
+                                    <span class="ctrl-label">SIMULATION / TEST VECTOR</span>
+                                    <span class="ctrl-desc">Register a simulated mock token if running without full FCM settings, then dispatch a test payload from backend.</span>
+                                </div>
+                                <div class="ctrl-trigger" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <button id="btn-fcm-mock" class="cyber-btn-outline btn-purple-glow font-orbitron btn-small">MOCK TOKEN</button>
+                                    <button id="btn-fcm-test-push" class="cyber-btn-outline btn-blue font-orbitron btn-small">TEST PUSH</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOCK 4: LIVE DATABASE INSPECTOR -->
+                    <div class="settings-block glass-card col-span-2">
+                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">LIVE SYSTEM DATABASE INSPECTOR</h3>
+                        <p class="desc mb-10">Real-time persistent state synced inside system_data.json. Refresh to pull live data logs.</p>
+                        <button id="btn-refresh-inspector" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow mb-10 w-100">REFRESH DATABASE LOGS</button>
+                        <pre id="raw-db-inspector" class="raw-json-inspector">Click Refresh to load database logs.</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 9: ADVANCED EMERGENCY FULLSCREEN SOS -->
+        <section id="screen-sos-active" class="app-screen full-distress-cover">
+            <div class="distress-interface">
+                <div class="distress-pulsar-circle"></div>
+                <div class="distress-pulsar-circle outer-1"></div>
+                <div class="distress-pulsar-circle outer-2"></div>
+
+                <div class="distress-meta">
+                    <h1 class="orbitron-heading neon-text-red title-giant">SOS EMERGENCY DETECTED</h1>
+                    <p class="status-warning blink-fast font-orbitron">CRITICAL DISPATCH VECTOR ACTIVATED</p>
+                </div>
+
+                <div class="distress-telemetry-box font-orbitron">
+                    <div class="metric">LATITUDE: <span id="distress-lat">0.00000</span></div>
+                    <div class="metric">LONGITUDE: <span id="distress-lng">0.00000</span></div>
+                    <div class="metric">DISPATCH BEACON: <span class="text-green">ONLINE</span></div>
+                </div>
+
+                <div class="sms-autogen-card glass-card">
+                    <h4 class="orbitron-heading font-small mb-5 text-red">SMS AUTOMATED EMER BROADCAST</h4>
+                    <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                    <textarea id="autogen-sms-preview" class="critical-input w-100 font-small" readonly rows="2"></textarea>
+                </div>
+
+                <div class="distress-disarm-panel glass-card">
+                    <h3 class="orbitron-heading font-small text-center mb-10">SAFEGATE PROTOCOL DISARM</h3>
+                    <div class="form-group">
+                        <label for="sos-disarm-pin">OPERATOR SECURE PASSPHRASE PIN</label>
+                        <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
+                        <input type="password" id="sos-disarm-pin" class="critical-input text-center" placeholder="••••">
+                    </div>
+                    <button id="btn-sos-disarm" class="cyber-btn btn-blue font-orbitron mt-10 w-100">DISARM DISTRESS PROTOCOLS</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 10: SAFETY TIMER SCREEN -->
+        <section id="screen-timer" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-blue">DEAD MAN'S SWITCH</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE PROTOCOL</button>
+                </div>
+                
+                <div class="timer-layout">
+                    <div class="timer-visual-area">
+                        <div class="radial-timer-box">
+                            <svg class="radial-svg" viewBox="0 0 100 100">
+                                <circle class="radial-track" cx="50" cy="50" r="45"></circle>
+                                <circle id="radial-progress" class="radial-fill" cx="50" cy="50" r="45" stroke-dasharray="282.7" stroke-dashoffset="0"></circle>
+                            </svg>
+                            <div class="radial-label-box">
+                                <span id="timer-countdown-val" class="countdown-big font-orbitron">00:00</span>
+                                <span id="timer-sub-status" class="countdown-small text-blue">STANDBY</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timer-settings-area" id="timer-config-panel">
+                        <h3 class="orbitron-heading font-small neon-text-purple">CONFIGURE COUNTDOWN TIMEOUT</h3>
+                        <p class="desc">Define the delay window before automatic emergency broadcast executes.</p>
+                        
+                        <div class="timer-presets">
+                            <button class="preset-btn active" data-seconds="10">10 SECONDS (TEST)</button>
+                            <button class="preset-btn" data-seconds="60">1 MINUTE</button>
+                            <button class="preset-btn" data-seconds="300">5 MINUTES</button>
+                            <button class="preset-btn" data-seconds="600">10 MINUTES</button>
+                        </div>
+                        
+                        <div class="form-group custom-time-box">
+                            <label for="custom-timer-input">CUSTOM DURATION SECONDS</label>
+                            <input type="number" id="custom-timer-input" class="critical-input" min="5" max="3600" placeholder="Seconds (e.g. 15)">
+                        </div>
+
+                        <button id="btn-timer-arm" class="cyber-btn btn-blue font-orbitron">ARM SWITCH</button>
+                    </div>
+
+                    <div class="timer-settings-area hidden" id="timer-active-panel">
+                        <div class="warning-alert font-orbitron text-red pulse-fast">MONITORING IS ARMED</div>
+                        <p class="desc">Enter emergency credential PIN or account password to safely disarm countdown.</p>
+                        
+                        <div class="form-group">
+                            <label for="timer-disarm-password">DISARM AUTHENTICATOR PIN</label>
+                            <input type="password" id="timer-disarm-password" class="critical-input" placeholder="••••••••">
+                        </div>
+                        <button id="btn-timer-disarm" class="cyber-btn btn-red font-orbitron">DISARM MONITOR</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 11: EMERGENCY FAMILY NET & SPEED DIALS -->
+        <section id="screen-circle" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-purple">FAMILY EMERGENCY CONNECTION GATEWAY</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE PROTOCOL</button>
+                </div>
+
+                <div class="circle-manager-layout">
+                    <!-- LEFT COLUMN: INVITES & SPEED DIALS -->
+                    <div class="circle-left-column">
+                        <div class="circle-invite-box glass-card border-purple-thin">
+                            <h3 class="orbitron-heading font-small neon-text-blue">TRANSMIT CYBER HANDSHAKE</h3>
+                            <p class="desc">Establish direct tracking links by peer phone number authorization handshake.</p>
+                            
+                            <form id="invite-form" class="mt-10">
+                                <div class="form-group">
+                                    <label for="invite-phone">PEER PHONE NUMBER</label>
+                                    <input type="text" id="invite-phone" class="critical-input" placeholder="+1234567890" required>
+                                </div>
+                                <button type="submit" class="cyber-btn btn-purple font-orbitron btn-small mt-5">TRANSMIT INVITATION</button>
+                            </form>
+                            <div id="invite-status-msg" class="status-msg-banner"></div>
+                        </div>
+
+                        <div class="circle-invite-box glass-card border-blue-thin mt-15">
+                            <h3 class="orbitron-heading font-small neon-text-purple">DIRECT EMERGENCY CONTACTS</h3>
+                            <p class="desc">Add offline speed-dials to instantly notify via direct dispatch relays.</p>
+                            
+                            <form id="direct-contact-form" class="mt-10">
+                                <div class="form-group">
+                                    <label for="direct-name">CONTACT FULL NAME</label>
+                                    <input type="text" id="direct-name" class="critical-input" placeholder="Father, Spouse..." required>
+                                </div>
+                                <div class="grid-2-col-equal">
+                                    <div class="form-group">
+                                        <label for="direct-relation">RELATIONSHIP</label>
+                                        <input type="text" id="direct-relation" class="critical-input" placeholder="Dad" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="direct-phone">PHONE NUMBER</label>
+                                        <input type="text" id="direct-phone" class="critical-input" placeholder="+1234..." required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="cyber-btn btn-blue font-orbitron btn-small mt-5">ADD DIRECT CONTACT</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: DUAL TABS LIST -->
+                    <div class="circle-lists-box">
+                        <div class="dual-tabs">
+                            <button id="tab-my-circle" class="tab-btn active font-orbitron">SECURE CIRCLE</button>
+                            <button id="tab-invites" class="tab-btn font-orbitron">PENDING BEACONS (<span id="invites-count">0</span>)</button>
+                            <button id="tab-direct-dials" class="tab-btn font-orbitron">DIRECT DIALS</button>
+                        </div>
+
+                        <div class="tab-content active" id="tab-content-circle">
+                            <div class="member-list-scroller" id="circle-members-list">
+                                <div class="empty-state">No secure handshakes established. Transmit a beacon link.</div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="tab-content-invites">
+                            <div class="member-list-scroller" id="circle-invites-list">
+                                <div class="empty-state">No pending inbound security requests.</div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="tab-content-direct-dials">
+                            <div class="member-list-scroller" id="circle-direct-list">
+                                <div class="empty-state">No direct speed dials listed. Register a profile above.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 12: FAKE CALL SETTINGS -->
+        <section id="screen-fake-call-config" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-purple">PROACTIVE DETERRENCE</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE PROTOCOL</button>
+                </div>
+
+                <div class="fakecall-config-layout">
+                    <div class="config-settings">
+                        <h3 class="orbitron-heading font-small neon-text-blue">OUTBOUND MOBILE SIMULATOR</h3>
+                        <p class="desc">Setup telephone UI simulations with synthetic dual frequencies and muffled TTS voices to cleanly escape high-risk encounters.</p>
+                        
+                        <div class="form-group mt-15">
+                            <label for="fake-caller-id">SIMULATED CALLER MASK</label>
+                            <select id="fake-caller-id" class="critical-input select-styled">
+                                <option value="Mom / Emergency Contact">Mom (Emergency Snitch)</option>
+                                <option value="Police Department Dispatch">Police Department Dispatch</option>
+                                <option value="Chief Security Supervisor">Boss / Fleet Manager</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fake-delay">SIMULATED INCOMING TIMEOUT</label>
+                            <select id="fake-delay" class="critical-input select-styled">
+                                <option value="0">Deploy Immediately</option>
+                                <option value="5">Deploy in 5 Seconds</option>
+                                <option value="15">Deploy in 15 Seconds</option>
+                                <option value="30">Deploy in 30 Seconds</option>
+                            </select>
+                        </div>
+
+                        <button id="btn-trigger-fake-call" class="cyber-btn btn-purple font-orbitron">DEPLOY CALL SIMULATION</button>
+                    </div>
+
+                    <div class="config-visual">
+                        <div class="smartphone-frame">
+                            <div class="smartphone-inner">
+                                <div class="pulse-phone-glow"></div>
+                                <div class="phone-symbol"></div>
+                                <span class="phone-status font-orbitron text-purple">DETERRENCE READY</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 13: FAKE CALL RINGING -->
+        <section id="screen-fake-call-active" class="app-screen full-dark-cover">
+            <div class="phone-call-interface">
+                <div class="caller-meta">
+                    <span class="security-lock-icon">🔒 Secure Line</span>
+                    <h1 id="incoming-caller-title" class="caller-name">Dad</h1>
+                    <span class="call-type animate-pulse">Incoming Call...</span>
+                </div>
+
+                <div class="phone-avatar-placeholder">
+                    <div class="avatar-ring-pulse"></div>
+                    <div class="avatar-ring-pulse outer"></div>
+                    <div class="avatar-inner-symbol">👤</div>
+                </div>
+
+                <div class="call-telemetry font-orbitron">
+                    <span>GPS LOC: SYNCED</span>
+                    <span>SIGNAL: 100% SECURE</span>
+                </div>
+
+                <div class="call-controls-slide">
+                    <div class="call-btn-wrapper">
+                        <button id="btn-fake-decline" class="round-call-btn btn-hangup">
+                            <div class="decline-symbol"></div>
+                        </button>
+                        <span class="label">DECLINE</span>
+                    </div>
+
+                    <div class="call-btn-wrapper">
+                        <button id="btn-fake-answer" class="round-call-btn btn-accept pulse-glow">
+                            <div class="answer-symbol"></div>
+                        </button>
+                        <span class="label">ANSWER</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 14: FAKE CALL TALKING -->
+        <section id="screen-fake-call-talking" class="app-screen full-dark-cover">
+            <div class="phone-call-interface">
+                <div class="caller-meta">
+                    <span class="security-lock-icon">🔒 Encryption Active</span>
+                    <h1 id="ongoing-caller-title" class="caller-name">Dad</h1>
+                    <span id="call-talking-timer" class="call-type font-orbitron">00:00</span>
+                </div>
+
+                <div class="phone-interactive-telemetry">
+                    <div class="wave-container">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                    <div class="feed-subtext font-orbitron" id="feed-synthetic-log">FEEDING AUDIBLE VOICE LINE...</div>
+                </div>
+
+                <div class="call-controls-ongoing">
+                    <div class="call-btn-wrapper">
+                        <button id="btn-fake-hangup" class="round-call-btn btn-hangup">
+                            <div class="decline-symbol"></div>
+                        </button>
+                        <span class="label font-orbitron">HANG UP</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Leaflet.js Mapping Library -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

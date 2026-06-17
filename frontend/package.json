@@ -1,0 +1,15 @@
+{
+  "name": "safewatch-frontend",
+  "version": "1.0.0",
+  "description": "SafeWatch Frontend Deployment Container",
+  "homepage": "https://siripireddy.github.io/safewatch",
+  "scripts": {
+    "start": "echo \"Starting SafeWatch SPA frontend...\" && node -e \"console.log('Access live on http://localhost:8000')\"",
+    "build": "node build.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  }
+}
