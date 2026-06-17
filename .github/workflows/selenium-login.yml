@@ -94,6 +94,12 @@ jobs:
         cd frontend/selenium-tests
         npm run login
 
+    - name: Print Server Logs on Failure
+      if: failure()
+      run: |
+        echo "=== uvicorn.log ==="
+        cat uvicorn.log
+
     - name: Upload Server Logs on Failure
       if: failure()
       uses: actions/upload-artifact@v4
