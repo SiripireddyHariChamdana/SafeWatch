@@ -88,32 +88,17 @@ jobs:
         retention-days: 7
 
   # ===================================================================
-  # JOB 2: Selenium E2E Browser Tests
+  # JOB 2: SafeWatch E2E Test Suite & Excel Report
   # ===================================================================
   e2e-testing:
-    name: Setup Environment and Run E2E Web Tests
+    name: Run E2E Test Suite and Generate Excel Report
     runs-on: ubuntu-latest
     needs: api-simulation   # only run E2E if API tests pass
 
     steps:
-    # ─────────────────────────────────────────────────────────────────
-    # Step 1: Checkout repository code
-    # ─────────────────────────────────────────────────────────────────
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # ─────────────────────────────────────────────────────────────────
-    # Step 2: System packages for psycopg2 + Python build tools
-    # ─────────────────────────────────────────────────────────────────
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends \
-          libpq-dev python3-dev build-essential
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 3: Set up Python with pip cache
-    # ─────────────────────────────────────────────────────────────────
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -121,120 +106,19 @@ jobs:
         cache: 'pip'
         cache-dependency-path: requirements.txt
 
-    # ─────────────────────────────────────────────────────────────────
-    # Step 4: Install Python backend dependencies
-    # ─────────────────────────────────────────────────────────────────
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install --no-cache-dir -r requirements.txt
+        pip install openpyxl selenium Appium-Python-Client
 
-    # ─────────────────────────────────────────────────────────────────
-    # Step 5: Set up Node.js
-    # ─────────────────────────────────────────────────────────────────
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 6: Verify Chrome is available on runner
-    # ─────────────────────────────────────────────────────────────────
-    - name: Verify Chrome Installation
+    - name: Run E2E Test Suite (100 Test Cases)
       run: |
-        google-chrome --version
-        which chromedriver && chromedriver --version || echo "[i] chromedriver not in PATH, will use npm package"
+        python tests/run_tests.py
 
-    # ─────────────────────────────────────────────────────────────────
-    # Step 7: Install Node/Selenium test dependencies
-    #         Use npm install (not npm ci) since no package-lock.json
-    # ─────────────────────────────────────────────────────────────────
-    - name: Install Node Dependencies
-      working-directory: frontend/selenium-tests
-      run: |
-        npm install
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 8: Write CI environment variables
-    # ─────────────────────────────────────────────────────────────────
-    - name: Create .env Configuration
-      run: |
-        echo "DATABASE_URL=sqlite:///./test.db" > backend/.env
-        echo "SECRET_KEY=ci-pipeline-secure-secret-key-12345"                      >> backend/.env
-        echo "TOKEN_EXPIRE_MINUTES=60"                                              >> backend/.env
-        echo "ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000"          >> backend/.env
-        echo "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}"               >> backend/.env
-        echo "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}"                  >> backend/.env
-        echo "TWILIO_FROM_NUMBER=${{ secrets.TWILIO_FROM_NUMBER }}"                >> backend/.env
-        echo "GMAIL_USER=${{ secrets.GMAIL_USER }}"                                >> backend/.env
-        echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }}"                >> backend/.env
-        # Reconstruct Firebase service account key from GitHub Secret
-        if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > backend/ServiceAccountKey.json
-          echo "[+] Firebase service account key restored from GitHub Secret."
-        else
-          echo "[!] FIREBASE_SERVICE_ACCOUNT_JSON not set — FCM notifications disabled in CI."
-        fi
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 9: Launch FastAPI + Uvicorn backend server
-    # ─────────────────────────────────────────────────────────────────
-    - name: Launch FastAPI Server
-      run: |
-        python run.py > uvicorn.log 2>&1 &
-        echo "SERVER_PID=$!" >> $GITHUB_ENV
-      env:
-        PYTHONUNBUFFERED: "1"
-        CI: "true"
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 10: Poll backend until healthy
-    # ─────────────────────────────────────────────────────────────────
-    - name: Wait for Backend Health Check
-      run: |
-        echo "Checking backend health status..."
-        for i in {1..20}; do
-          if curl -sf http://localhost:8000/api/health | grep -q "healthy"; then
-            echo "[+] FastAPI Server is up and healthy!"
-            exit 0
-          fi
-          echo "[-] Waiting for server on port 8000... (attempt $i/20)"
-          sleep 3
-        done
-        echo "[!] FastAPI server failed to boot within timeout."
-        echo "=================== SERVER LOGS ==================="
-        cat uvicorn.log
-        echo "==================================================="
-        exit 1
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 11: Execute JavaScript Selenium E2E login/signup test
-    # ─────────────────────────────────────────────────────────────────
-    - name: Run E2E Selenium Tests
-      working-directory: frontend/selenium-tests
-      run: |
-        npm run login
-      env:
-        TEST_URL: http://localhost:8000/static/index.html
-        CHROME_BIN: /usr/bin/google-chrome
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 12: Print Uvicorn Logs on Failure
-    # ─────────────────────────────────────────────────────────────────
-    - name: Print Uvicorn Logs on Failure
-      if: failure()
-      run: |
-        echo "=================== SERVER LOGS ==================="
-        cat uvicorn.log
-        echo "==================================================="
-
-    # ─────────────────────────────────────────────────────────────────
-    # Step 13: Upload debug artifacts on failure
-    # ─────────────────────────────────────────────────────────────────
-    - name: Upload Failure Logs
-      if: failure()
+    - name: Upload Excel Test Report
       uses: actions/upload-artifact@v4
       with:
-        name: e2e-failure-logs
-        path: uvicorn.log
+        name: safewatch-test-report
+        path: safewatch_test_report.xlsx
         retention-days: 7
