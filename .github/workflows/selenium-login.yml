@@ -84,6 +84,14 @@ jobs:
       with:
         node-version: '20'
 
+    - name: Install Google Chrome (stable)
+      run: |
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends google-chrome-stable
+        google-chrome --version
+
     - name: Install Node.js E2E Dependencies
       run: |
         cd frontend/selenium-tests
@@ -92,7 +100,7 @@ jobs:
     - name: Run JS Selenium E2E Tests
       run: |
         cd frontend/selenium-tests
-        npm run login
+        SAFEWATCH_TEST_URL=http://localhost:8000/static/index.html npm run login
 
     - name: Print Server Logs on Failure
       if: failure()

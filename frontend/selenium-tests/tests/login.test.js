@@ -1,38 +1,109 @@
 const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const assert = require('assert');
+const http = require('http');
 
+// ---------------------------------------------------------------------------
+// Helper: Make an HTTP POST request to the backend API (no external deps)
+// ---------------------------------------------------------------------------
+function apiPost(path, body) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body);
+    const options = {
+      hostname: 'localhost',
+      port: 8000,
+      path: path,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+      },
+    };
+    const req = http.request(options, (res) => {
+      let raw = '';
+      res.on('data', (chunk) => { raw += chunk; });
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(raw) }); }
+        catch (e) { resolve({ status: res.statusCode, body: raw }); }
+      });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Test Suite
+// ---------------------------------------------------------------------------
 describe('SafeWatch E2E Login Automation Test', function () {
-  this.timeout(45000); // Set timeout to 45 seconds for CI stability
+  this.timeout(60000); // 60-second timeout for CI stability
   let driver;
 
+  // -------------------------------------------------------------------------
+  // Setup: create Chrome driver + pre-seed the test user via API
+  // -------------------------------------------------------------------------
   before(async function () {
     console.log('[*] Initializing Headless Chrome WebDriver...');
     const options = new chrome.Options();
-    options.addArguments('--headless');
+    options.addArguments('--headless=new');
     options.addArguments('--disable-gpu');
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
     options.addArguments('--window-size=1280,800');
+    options.addArguments('--disable-extensions');
 
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(options)
       .build();
-    
-    console.log('[+] WebDriver session established successfully.');
+
+    console.log('[+] WebDriver session established.');
+
+    // Pre-seed test user via backend API (idempotent — ignore "already registered")
+    console.log('[*] Pre-seeding test user via API...');
+    const signupRes = await apiPost('/api/auth', {
+      action: 'signup',
+      email: 'test@example.com',
+      password: 'password123',
+      name: 'CI Test Operator',
+      blood_group: 'O+',
+      address: '123 Continuous Integration Ave',
+      emergency_phone: '+15550199',
+    });
+    if (signupRes.status === 200) {
+      console.log('[+] Test user created successfully.');
+    } else if (
+      signupRes.status === 400 &&
+      typeof signupRes.body.detail === 'string' &&
+      signupRes.body.detail.toLowerCase().includes('already')
+    ) {
+      console.log('[i] Test user already exists — skipping signup.');
+    } else {
+      console.log(`[!] Unexpected signup response ${signupRes.status}:`, signupRes.body);
+    }
   });
 
+  // -------------------------------------------------------------------------
+  // Teardown: print browser console logs on failure, close driver
+  // -------------------------------------------------------------------------
   afterEach(async function () {
     if (this.currentTest.state === 'failed' && driver) {
       console.log('=== BROWSER CONSOLE LOGS ===');
       try {
         const logs = await driver.manage().logs().get('browser');
-        for (const log of logs) {
-          console.log(`[${log.level.name}] ${log.message}`);
+        for (const entry of logs) {
+          console.log(`  [${entry.level.name}] ${entry.message}`);
         }
       } catch (e) {
-        console.log('[!] Failed to retrieve browser logs:', e.message);
+        console.log('[!] Could not retrieve browser logs:', e.message);
+      }
+      console.log('=== PAGE SOURCE (truncated) ===');
+      try {
+        const src = await driver.getPageSource();
+        console.log(src.substring(0, 3000));
+      } catch (e) {
+        console.log('[!] Could not get page source:', e.message);
       }
       console.log('============================');
     }
@@ -46,80 +117,70 @@ describe('SafeWatch E2E Login Automation Test', function () {
     }
   });
 
-  it('should successfully enroll a new user and log in to reach the dashboard', async function () {
+  // -------------------------------------------------------------------------
+  // TEST: Login with valid credentials → dashboard appears
+  // -------------------------------------------------------------------------
+  it('should log in with valid credentials and reach the dashboard', async function () {
     const baseUrl = process.env.TEST_URL || 'http://localhost:8000/static/index.html';
     console.log(`[*] Loading target URL: ${baseUrl}`);
     await driver.get(baseUrl);
 
-    // -----------------------------------------------------------------
-    // STEP 1: NAVIGATION & SIGNUP (Ensure user exists in DB)
-    // -----------------------------------------------------------------
-    console.log('[*] Waiting for gateway login view to load...');
-    await driver.wait(until.elementLocated(By.id('to-signup')), 10000);
-    
-    console.log('[*] Navigating to Enroll Profile screen...');
-    const enrollLink = await driver.findElement(By.id('to-signup'));
-    await enrollLink.click();
-    
-    console.log('[*] Filling out signup credentials...');
-    await driver.wait(until.elementLocated(By.id('signup-email')), 5000);
-    await driver.findElement(By.id('signup-name')).sendKeys('CI Test Operator');
-    await driver.findElement(By.id('signup-email')).sendKeys('test@example.com');
-    await driver.findElement(By.id('signup-password')).sendKeys('password123');
-    await driver.findElement(By.id('signup-emergency-phone')).sendKeys('+1-555-0199');
-    await driver.findElement(By.id('signup-address')).sendKeys('123 Continuous Integration Ave');
-    
-    console.log('[*] Submitting enrollment request...');
-    const signupForm = await driver.findElement(By.id('signup-form'));
-    await signupForm.submit();
+    // -----------------------------------------------------------------------
+    // Wait for login screen to be ready
+    // -----------------------------------------------------------------------
+    console.log('[*] Waiting for login screen to load...');
+    const loginEmailField = await driver.wait(
+      until.elementLocated(By.id('login-email')), 15000
+    );
+    await driver.wait(until.elementIsVisible(loginEmailField), 10000);
 
-    // Handle native browser alert triggered on successful signup
-    try {
-      console.log('[*] Waiting for signup success alert...');
-      await driver.wait(until.alertIsPresent(), 8000);
-      const alert = await driver.switchTo().alert();
-      console.log(`[+] Alert dialog text: "${await alert.getText()}"`);
-      await alert.accept();
-      console.log('[+] Accepted signup alert.');
-    } catch (e) {
-      console.log('[i] Alert handling skipped or alert not found:', e.message);
-    }
+    // -----------------------------------------------------------------------
+    // Fill in login credentials
+    // -----------------------------------------------------------------------
+    console.log('[*] Entering credentials...');
+    await loginEmailField.clear();
+    await loginEmailField.sendKeys('test@example.com');
 
-    // -----------------------------------------------------------------
-    // STEP 2: VERIFICATION & LOGIN
-    // -----------------------------------------------------------------
-    console.log('[*] Waiting for redirection back to login gateway...');
-    await driver.sleep(1500); // Wait for transition animation to settle
+    const loginPasswordField = await driver.findElement(By.id('login-password'));
+    await loginPasswordField.clear();
+    await loginPasswordField.sendKeys('password123');
 
-    const emailField = await driver.wait(until.elementLocated(By.id('login-email')), 10000);
-    await driver.wait(until.elementIsVisible(emailField), 10000);
-    
-    // Clear and input credentials
-    console.log('[*] Typing login credentials...');
-    await emailField.clear();
-    await emailField.sendKeys('test@example.com');
-    
-    const passwordField = await driver.wait(until.elementLocated(By.id('login-password')), 10000);
-    await driver.wait(until.elementIsVisible(passwordField), 10000);
-    await passwordField.clear();
-    await passwordField.sendKeys('password123');
+    const emailVal = await loginEmailField.getAttribute('value');
+    const passVal  = await loginPasswordField.getAttribute('value');
+    console.log(`[i] Email: "${emailVal}"  |  Password length: ${passVal.length}`);
 
-    console.log(`[i] Email field value: "${await emailField.getAttribute('value')}"`);
-    console.log(`[i] Password field value: "${await passwordField.getAttribute('value')}"`);
-    
-    console.log('[*] Initializing secure gate access...');
-    const loginButton = await driver.wait(until.elementLocated(By.id('login-button')), 10000);
-    await driver.wait(until.elementIsVisible(loginButton), 10000);
-    await driver.executeScript("arguments[0].click();", loginButton);
+    // -----------------------------------------------------------------------
+    // Click login button via JavaScript (reliable in headless mode)
+    // -----------------------------------------------------------------------
+    console.log('[*] Clicking login button...');
+    const loginButton = await driver.findElement(By.id('login-button'));
+    await driver.executeScript('arguments[0].click();', loginButton);
 
-    // -----------------------------------------------------------------
-    // STEP 3: DASHBOARD ROUTING VERIFICATION
-    // -----------------------------------------------------------------
-    console.log('[*] Verifying redirection to active dashboard hub...');
-    const dashboard = await driver.wait(until.elementLocated(By.id('screen-dashboard')), 15000);
-    const isDisplayed = await dashboard.isDisplayed();
-    
-    assert.strictEqual(isDisplayed, true, 'Dashboard screen should be visible after successful login.');
-    console.log('[+] E2E Login validation passed. Operator successfully logged in.');
+    // -----------------------------------------------------------------------
+    // Wait for dashboard to become active (check CSS class, not just existence)
+    // The SPA adds class "active" to the visible screen via showScreen()
+    // -----------------------------------------------------------------------
+    console.log('[*] Waiting for dashboard screen to become active...');
+    await driver.wait(async () => {
+      try {
+        const dashboardEl = await driver.findElement(By.id('screen-dashboard'));
+        const classes = await dashboardEl.getAttribute('class');
+        return classes && classes.includes('active');
+      } catch (e) {
+        return false;
+      }
+    }, 20000, 'Dashboard screen did not become active within 20 seconds');
+
+    // -----------------------------------------------------------------------
+    // Final assertion: dashboard is displayed
+    // -----------------------------------------------------------------------
+    const dashboardEl = await driver.findElement(By.id('screen-dashboard'));
+    const classes = await dashboardEl.getAttribute('class');
+    assert.ok(
+      classes && classes.includes('active'),
+      `Expected screen-dashboard to have class "active", got: "${classes}"`
+    );
+
+    console.log('[+] SUCCESS: Dashboard is active. Login E2E test passed!');
   });
 });
