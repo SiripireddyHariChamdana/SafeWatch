@@ -88,11 +88,13 @@ describe('SafeWatch E2E Login Automation Test', function () {
     await driver.wait(until.elementIsVisible(passwordField), 10000);
     await passwordField.clear();
     await passwordField.sendKeys('password123');
+
+    console.log(`[i] Email field value: "${await emailField.getAttribute('value')}"`);
+    console.log(`[i] Password field value: "${await passwordField.getAttribute('value')}"`);
     
-    console.log('[*] Initializing secure gate access...');
-    const loginButton = await driver.wait(until.elementLocated(By.id('login-button')), 10000);
-    await driver.wait(until.elementIsVisible(loginButton), 10000);
-    await loginButton.click();
+    console.log('[*] Submitting login form...');
+    const loginForm = await driver.findElement(By.id('login-form'));
+    await loginForm.submit();
 
     // -----------------------------------------------------------------
     // STEP 3: DASHBOARD ROUTING VERIFICATION
