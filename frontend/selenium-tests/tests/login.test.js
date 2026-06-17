@@ -23,6 +23,21 @@ describe('SafeWatch E2E Login Automation Test', function () {
     console.log('[+] WebDriver session established successfully.');
   });
 
+  afterEach(async function () {
+    if (this.currentTest.state === 'failed' && driver) {
+      console.log('=== BROWSER CONSOLE LOGS ===');
+      try {
+        const logs = await driver.manage().logs().get('browser');
+        for (const log of logs) {
+          console.log(`[${log.level.name}] ${log.message}`);
+        }
+      } catch (e) {
+        console.log('[!] Failed to retrieve browser logs:', e.message);
+      }
+      console.log('============================');
+    }
+  });
+
   after(async function () {
     if (driver) {
       console.log('[*] Tearing down WebDriver session...');
