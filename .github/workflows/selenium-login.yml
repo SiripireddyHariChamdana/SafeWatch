@@ -18,6 +18,12 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: List Tracked Website Files
+      run: |
+        echo "=== Website Files Tracked in Git ==="
+        git ls-files
+        echo ""
+
     - name: Install System Dependencies
       run: |
         sudo apt-get update -qq

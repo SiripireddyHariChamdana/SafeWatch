@@ -25,8 +25,8 @@ jobs:
 
     - name: Display Repository Structure
       run: |
-        echo "=== SafeWatch Repository Structure ==="
-        find . -type f -name "*.py" | grep -v __pycache__ | sort
+        echo "=== SafeWatch Repository Structure (All Tracked Files) ==="
+        git ls-files
         echo ""
         echo "=== Vulnerability Test Results folder ==="
         ls -la "Vulnerability Test Results/"
