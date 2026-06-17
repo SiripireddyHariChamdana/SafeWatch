@@ -74,20 +74,24 @@ describe('SafeWatch E2E Login Automation Test', function () {
     // STEP 2: VERIFICATION & LOGIN
     // -----------------------------------------------------------------
     console.log('[*] Waiting for redirection back to login gateway...');
-    await driver.wait(until.elementLocated(By.id('login-email')), 10000);
+    await driver.sleep(1500); // Wait for transition animation to settle
+
+    const emailField = await driver.wait(until.elementLocated(By.id('login-email')), 10000);
+    await driver.wait(until.elementIsVisible(emailField), 10000);
     
     // Clear and input credentials
     console.log('[*] Typing login credentials...');
-    const emailField = await driver.findElement(By.id('login-email'));
     await emailField.clear();
     await emailField.sendKeys('test@example.com');
     
-    const passwordField = await driver.findElement(By.id('login-password'));
+    const passwordField = await driver.wait(until.elementLocated(By.id('login-password')), 10000);
+    await driver.wait(until.elementIsVisible(passwordField), 10000);
     await passwordField.clear();
     await passwordField.sendKeys('password123');
     
     console.log('[*] Initializing secure gate access...');
-    const loginButton = await driver.findElement(By.id('login-button'));
+    const loginButton = await driver.wait(until.elementLocated(By.id('login-button')), 10000);
+    await driver.wait(until.elementIsVisible(loginButton), 10000);
     await loginButton.click();
 
     // -----------------------------------------------------------------
