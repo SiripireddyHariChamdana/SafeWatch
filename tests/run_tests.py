@@ -358,15 +358,16 @@ if __name__ == "__main__":
     # Locate files explicitly or via loader
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
+    tests_dir = os.path.abspath(os.path.dirname(__file__))
     
     # Discover Selenium Web Tests
-    selenium_dir = os.path.join(os.path.dirname(__file__), "selenium")
-    selenium_suite = loader.discover(start_dir=selenium_dir, pattern="test_*.py")
+    selenium_dir = os.path.join(tests_dir, "selenium")
+    selenium_suite = loader.discover(start_dir=selenium_dir, pattern="test_*.py", top_level_dir=tests_dir)
     suite.addTests(selenium_suite)
     
     # Discover Appium Mobile Tests
-    appium_dir = os.path.join(os.path.dirname(__file__), "appium")
-    appium_suite = loader.discover(start_dir=appium_dir, pattern="test_*.py")
+    appium_dir = os.path.join(tests_dir, "appium")
+    appium_suite = loader.discover(start_dir=appium_dir, pattern="test_*.py", top_level_dir=tests_dir)
     suite.addTests(appium_suite)
     
     total_found = suite.countTestCases()
