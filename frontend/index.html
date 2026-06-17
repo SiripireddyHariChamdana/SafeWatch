@@ -7,7 +7,7 @@
     <!-- Modern Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet.js Mapping CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="./style.css">
@@ -174,125 +174,109 @@
         <!-- SCREEN 3: MASTER COMMAND HUB (DASHBOARD) -->
         <section id="screen-dashboard" class="app-screen">
             <header class="dashboard-header glass-card">
-                <div class="header-logo">
-                    <div class="pulse-indicator-green" id="hub-status-badge"></div>
-                    <h2 class="orbitron-heading neon-text-blue" id="hub-logo-text">SAFEWATCH HUB</h2>
-                    <span class="status-pill active-glow">SYSTEM ACTIVE</span>
+                <div class="header-logo-container">
+                    <h1 class="app-title-text neon-text-blue" id="hub-logo-text">SafeWatch</h1>
+                    <p class="app-welcome-text" id="profile-welcome">Hello, User</p>
                 </div>
                 <div class="header-profile-telemetry">
-                    <div id="btn-dashboard-profile" class="header-avatar-circle cursor-pointer">👤</div>
-                    <span id="profile-name" class="name-badge cursor-pointer">OPERATOR: SECURE</span>
-                    <button id="btn-logout" class="cyber-btn-outline font-orbitron btn-small btn-red">DISCONNECT</button>
+                    <div id="btn-dashboard-profile" class="header-avatar-circle cursor-pointer">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <!-- Keep elements to prevent JS errors -->
+                    <span id="profile-name" style="display: none;">OPERATOR: SECURE</span>
+                    <button id="btn-logout-dummy" style="display: none;"></button>
+                    <div id="hub-status-badge" style="display: none;"></div>
                 </div>
             </header>
 
-            <div class="dashboard-grid">
-                
-                <!-- PRIMARY HIGH-PRIORITY ACTION PAIR -->
-                <!-- CARD: LIVE TRACKING -->
-                <div class="glass-card map-card col-span-2">
-                    <div class="card-header">
-                        <h3 class="orbitron-heading neon-text-blue font-small">LIVE GEOMETRIC TRACKING MAP</h3>
-                        <button id="btn-add-map-hazard" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow">REPORT LOCAL HAZARD</button>
+            <!-- Top Grid of 2 Main Cards -->
+            <div class="top-actions-grid">
+                <!-- Card 1: Live GPS -->
+                <div id="card-live-gps" class="action-card border-cyan cursor-pointer" onclick="document.getElementById('map-overlay-modal').classList.add('active'); setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);">
+                    <div class="action-icon-circle bg-cyan-translucent">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#00F2FF" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3"/>
+                            <line x1="12" y1="1" x2="12" y2="4"/>
+                            <line x1="12" y1="20" x2="12" y2="23"/>
+                            <line x1="1" y1="12" x2="4" y2="12"/>
+                            <line x1="20" y1="12" x2="23" y2="12"/>
+                        </svg>
                     </div>
-                    <div id="live-gps-map"></div>
+                    <span class="action-card-label">Live GPS</span>
                 </div>
 
-                <!-- CARD: SOS ALERT DISPATCH -->
-                <div class="glass-card sos-card">
-                    <div class="card-header">
-                        <h3 class="orbitron-heading neon-text-red font-small">SOS EMERGENCY BEACON</h3>
+                <!-- Card 2: SOS Alert -->
+                <div id="card-sos-alert" class="action-card border-red cursor-pointer" onclick="document.getElementById('btn-sos-trigger').click()">
+                    <div class="action-icon-circle bg-red-translucent">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#FF0000" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
                     </div>
-                    <div class="sos-action-wrapper">
-                        <button id="btn-sos-trigger" class="sos-pulsing-button font-orbitron">
-                            <span class="sos-label">SOS</span>
-                            <span class="sos-sublabel">PRESS TO DISPATCH</span>
-                        </button>
-                    </div>
-                    <div class="sos-status-label font-orbitron text-center text-muted">STEALTH DISPATCH ON TAP</div>
+                    <span class="action-card-label">SOS Alert</span>
+                </div>
+            </div>
+
+            <!-- Tools & History Heading -->
+            <h3 class="section-title">Tools & History</h3>
+
+            <!-- Tools 2-Column Grid (6 Cards) -->
+            <div class="tools-grid-simple">
+                <!-- 1. Safety Timer -->
+                <div id="card-safety-timer" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-magenta">⏱️</div>
+                    <span class="tool-label-simple">Safety Timer</span>
                 </div>
 
-                <!-- TELEMETRY METRIC STRIP -->
-                <div class="glass-card telemetry-card col-span-3">
-                    <div class="telemetry-grid">
-                        <div class="telemetry-item">
-                            <span class="telemetry-label font-orbitron">GPS SPEED MONITOR</span>
-                            <div class="telemetry-value neon-text-blue"><span id="tel-speed">0.0</span> <span class="unit">km/h</span></div>
-                            <div class="telemetry-bar-bg"><div id="bar-speed" class="telemetry-bar-fill blue-bg" style="width: 5%"></div></div>
-                        </div>
-                        <div class="telemetry-item">
-                            <span class="telemetry-label font-orbitron">BATTERY SNITCH</span>
-                            <div class="telemetry-value neon-text-purple"><span id="tel-battery">--</span> <span class="unit">%</span></div>
-                            <div class="telemetry-bar-bg"><div id="bar-battery" class="telemetry-bar-fill purple-bg" style="width: 80%"></div></div>
-                        </div>
-                        <div class="telemetry-item">
-                            <span class="telemetry-label font-orbitron">BEACON SIGNAL dBm</span>
-                            <div class="telemetry-value neon-text-green"><span id="tel-signal">92</span> <span class="unit">dBm</span></div>
-                            <div class="telemetry-bar-bg"><div id="bar-signal" class="telemetry-bar-fill green-bg" style="width: 90%"></div></div>
-                        </div>
-                    </div>
+                <!-- 2. Emergency Circle -->
+                <div id="card-emergency-circle" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-cyan">👥</div>
+                    <span class="tool-label-simple">Emergency Circle</span>
                 </div>
 
-                <!-- SECONDARY FUNCTIONAL TOOLS GRID -->
-                <!-- TOOL 1: SAFETY DEAD MAN SWITCH -->
-                <div id="card-safety-timer" class="glass-card tool-card interactive-card border-blue">
-                    <div class="tool-icon timer-icon"></div>
-                    <h4 class="orbitron-heading card-tool-title">DEAD MAN'S SWITCH</h4>
-                    <p class="tool-desc">Digital countdown switch triggering program SOS upon operator timeout.</p>
-                    <div class="tool-status font-orbitron text-blue" id="timer-tool-status">STATUS: MONITOR STANDBY</div>
+                <!-- 3. Voice Evidence (Maps to fake call) -->
+                <div id="card-fake-call" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-cyan">🎤</div>
+                    <span class="tool-label-simple">Voice Evidence</span>
                 </div>
 
-                <!-- TOOL 2: FAMILY NETWORK HUB -->
-                <div id="card-emergency-circle" class="glass-card tool-card interactive-card border-purple">
-                    <div class="tool-icon circle-icon"></div>
-                    <h4 class="orbitron-heading card-tool-title">FAMILY CONTACTS</h4>
-                    <p class="tool-desc">Send circle invitations, approve connection handshakes, and manage speed dials.</p>
-                    <div class="tool-status font-orbitron text-purple" id="circle-tool-status">0 CONNECTED NODES</div>
+                <!-- 4. Family Tracking (Maps to safezone manager) -->
+                <div id="card-safezone-manager" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-magenta">👪</div>
+                    <span class="tool-label-simple">Family Tracking</span>
                 </div>
 
-                <!-- TOOL 3: PROACTIVE FAKE CALL -->
-                <div id="card-fake-call" class="glass-card tool-card interactive-card border-purple">
-                    <div class="tool-icon fakecall-icon"></div>
-                    <h4 class="orbitron-heading card-tool-title">FAKE CALL DETERRENT</h4>
-                    <p class="tool-desc">Trigger highly realistic smartphone layouts with voice playbacks and loops.</p>
-                    <div class="tool-status font-orbitron text-purple">DETERRENCE CADENCE: READY</div>
+                <!-- 5. Live Tracking (Maps to map modal) -->
+                <div id="card-live-tracking" class="tool-card-simple cursor-pointer" onclick="document.getElementById('map-overlay-modal').classList.add('active'); setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);">
+                    <div class="tool-icon-simple color-cyan">🎯</div>
+                    <span class="tool-label-simple">Live Tracking</span>
                 </div>
 
-                <!-- TOOL 5: SAFEZONE MANAGER -->
-                <div id="card-safezone-manager" class="glass-card tool-card interactive-card border-purple">
-                    <div class="tool-icon zone-icon"></div>
-                    <h4 class="orbitron-heading card-tool-title">SAFEZONE GEODISTANCE</h4>
-                    <p class="tool-desc">Configure a 500m geofence. Logs database violations if breached.</p>
-                    <div class="tool-status font-orbitron text-purple" id="safezone-tool-status">GEOFENCE INACTIVE</div>
+                <!-- 6. Travel History -->
+                <div id="card-travel-history" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-gray">🕒</div>
+                    <span class="tool-label-simple">Travel History</span>
                 </div>
+            </div>
 
-                <!-- TOOL 6: TRAVEL LOGS TIMELINE -->
-                <div id="card-travel-history" class="glass-card tool-card interactive-card border-blue">
-                    <div class="tool-icon history-icon"></div>
-                    <h4 class="orbitron-heading card-tool-title">TRAVEL TIMELINE</h4>
-                    <p class="tool-desc">Review a timeline log of past telemetry nodes and safety scores.</p>
-                    <div class="tool-status font-orbitron text-blue" id="history-tool-status">0 LOCATION LOGS</div>
-                </div>
-
-                <!-- TOOL 7: MASTER SETTINGS CONFIG -->
-                <div id="card-master-settings" class="glass-card tool-card interactive-card border-purple col-span-2">
-                    <div class="tool-icon settings-icon"></div>
-                    <h4 class="orbitron-heading card-tool-title">SYSTEM PREFERENCES & PANIC TRIGGERS</h4>
-                    <p class="tool-desc">Configure accelerometer shake sensors, hardware keys (Shift+S+S), AMOLED black grids, and panic database wipes.</p>
-                    <div class="tool-status font-orbitron text-purple">INTELLIGENCE CONFIGURATION GATEWAY</div>
-                </div>
-
-                <!-- WIDGET: DECORATIVE HEATMAP RADAR -->
-                <div class="glass-card tool-card border-blue scanner-container">
-                    <div class="radar-scan-circle">
-                        <div class="radar-sweep-line"></div>
-                        <div class="radar-ping node-1"></div>
-                        <div class="radar-ping node-2"></div>
-                    </div>
-                    <h4 class="orbitron-heading card-tool-title text-center mt-10">BEACON HEATMAP</h4>
-                    <p class="tool-desc text-center">Continuous scanning of hazard zones and peer threat alerts.</p>
-                </div>
-
+            <!-- Hidden dummy elements to satisfy JS requirements -->
+            <div style="display: none !important;">
+                <button id="btn-sos-trigger"></button>
+                <div id="card-master-settings"></div>
+                <div id="tel-speed">0.0</div>
+                <div id="bar-speed"></div>
+                <div id="tel-battery">100</div>
+                <div id="bar-battery"></div>
+                <div id="tel-signal">92</div>
+                <div id="bar-signal"></div>
+                <div id="circle-tool-status"></div>
+                <div id="history-tool-status"></div>
+                <div id="safezone-tool-status"></div>
+                <div id="timer-tool-status"></div>
             </div>
         </section>
 
@@ -301,7 +285,10 @@
             <div class="glass-card panel-container">
                 <div class="panel-header">
                     <h2 class="orbitron-heading neon-text-blue">TELEMETRY OPERATOR DEPLOYMENT</h2>
-                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-logout" class="cyber-btn-outline font-orbitron btn-small btn-red">DISCONNECT</button>
+                        <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+                    </div>
                 </div>
                 <form id="profile-form" class="auth-form">
                     <div class="profile-avatar-selector-section">
@@ -845,6 +832,64 @@
         </section>
 
     </main>
+
+    <!-- MAP OVERLAY MODAL -->
+    <div id="map-overlay-modal" class="map-overlay-modal-container">
+        <div class="glass-card map-card-modal">
+            <div class="modal-header">
+                <h3 class="app-title-text neon-text-blue font-small">LIVE GEOMETRIC TRACKING MAP</h3>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-add-map-hazard" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow">REPORT LOCAL HAZARD</button>
+                    <button id="btn-close-map" class="cyber-btn-outline font-orbitron btn-small btn-red" onclick="document.getElementById('map-overlay-modal').classList.remove('active')">CLOSE</button>
+                </div>
+            </div>
+            <div id="live-gps-map"></div>
+        </div>
+    </div>
+
+    <!-- BOTTOM FLOATING NAVIGATION BAR -->
+    <div id="app-bottom-nav" class="bottom-nav-container">
+        <button id="nav-btn-home" class="nav-item active" onclick="showScreenFromNav('dashboard')">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span class="nav-label">Home</span>
+        </button>
+        <button id="nav-btn-profile" class="nav-item" onclick="showScreenFromNav('profile')">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <span class="nav-label">Profile</span>
+        </button>
+    </div>
+
+    <script>
+        function showScreenFromNav(screenKey) {
+            const screensList = [
+                'login', 'signup', 'verify', 'forgot', 'reset',
+                'dashboard', 'profile', 'safezone', 'history', 
+                'settings', 'sosActive', 'timer', 'circle', 
+                'fakecallConfig', 'fakecallActive', 'fakecallTalking'
+            ];
+            screensList.forEach(key => {
+                const el = document.getElementById('screen-' + (key === 'sosActive' ? 'sos-active' : key === 'fakecallConfig' ? 'fake-call-config' : key === 'fakecallActive' ? 'fake-call-active' : key === 'fakecallTalking' ? 'fake-call-talking' : key));
+                if (el) {
+                    if (key === screenKey) {
+                        el.classList.add('active');
+                    } else {
+                        el.classList.remove('active');
+                    }
+                }
+            });
+            
+            document.getElementById('nav-btn-home').classList.toggle('active', screenKey === 'dashboard');
+            document.getElementById('nav-btn-profile').classList.toggle('active', screenKey === 'profile');
+            
+            if (screenKey === 'dashboard') {
+                setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);
+            }
+        }
+    </script>
 
     <!-- Leaflet.js Mapping Library -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

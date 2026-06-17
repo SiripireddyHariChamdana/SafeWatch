@@ -36,12 +36,7 @@ jobs:
         echo "=================================================="
         echo " SAFEWATCH SECURITY CODE REVIEW -- GITHUB ACTIONS"
         echo "=================================================="
-        python -m pytest tests/test_security_review.py \
-          --tb=short \
-          -v \
-          --no-header \
-          --color=yes \
-          -p no:warnings
+        python tests/test_security_review.py
       env:
         PYTHONDONTWRITEBYTECODE: "1"
         PYTHONIOENCODING: "utf-8"
