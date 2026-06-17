@@ -7,10 +7,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
-# Load environment variables from both the root directory and backend/.env
-load_dotenv() # Load from current working directory (.env in root)
+# Load environment variables from backend/.env
 _ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
-load_dotenv(_ENV_PATH) # Load from backend/.env
+load_dotenv(_ENV_PATH)
 
 # ==========================================
 # DATABASE CONFIGURATION

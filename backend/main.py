@@ -21,8 +21,7 @@ import pathlib
 from dotenv import load_dotenv
 
 
-# Load environment variables from both the root directory and backend/.env
-load_dotenv() # Load from current working directory (.env in root)
+# Load environment variables from backend/.env
 _BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 _ENV_PATH = os.path.join(_BACKEND_DIR, ".env")
 load_dotenv(_ENV_PATH)

@@ -342,14 +342,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // LEAFLET CYBER MAP BUILDER
     // ------------------------------------------
     function initMap() {
-        if (typeof L === 'undefined') {
-            console.warn("Leaflet library is not loaded. Skipping map initialization.");
-            return;
-        }
-        if (map) {
-            console.warn("Map container is already initialized.");
-            return;
-        }
         map = L.map("live-gps-map", { zoomControl: false }).setView([currentCoords.lat, currentCoords.lng], 15);
         
         L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
@@ -495,13 +487,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Initialize modules
                 document.getElementById("profile-name").textContent = `OPERATOR: ${currentUser.name.toUpperCase()}`;
                 
-                try { initMap(); } catch(e) { console.error("Map init failed:", e); }
-                try { initTelemetry(); } catch(e) { console.error("Telemetry init failed:", e); }
-                try { loadThemePreferences(); } catch(e) { console.error("Theme preferences load failed:", e); }
-                try { syncContactsList(); } catch(e) { console.error("Contacts list sync failed:", e); }
-                try { syncSafeZoneUI(); } catch(e) { console.error("SafeZone UI sync failed:", e); }
-                try { renderTravelTimeline(); } catch(e) { console.error("Travel timeline render failed:", e); }
-                try { initFCM(); } catch(e) { console.error("FCM init failed:", e); }
+                initMap();
+                initTelemetry();
+                loadThemePreferences();
+                syncContactsList();
+                syncSafeZoneUI();
+                renderTravelTimeline();
+                initFCM();
 
                 showScreen("dashboard");
             } else {
@@ -540,13 +532,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 sessionStorage.setItem("token", authToken);
 
                 document.getElementById("profile-name").textContent = `OPERATOR: ${currentUser.name.toUpperCase()}`;
-                try { initMap(); } catch(e) { console.error("Map init failed:", e); }
-                try { initTelemetry(); } catch(e) { console.error("Telemetry init failed:", e); }
-                try { loadThemePreferences(); } catch(e) { console.error("Theme preferences load failed:", e); }
-                try { syncContactsList(); } catch(e) { console.error("Contacts list sync failed:", e); }
-                try { syncSafeZoneUI(); } catch(e) { console.error("SafeZone UI sync failed:", e); }
-                try { renderTravelTimeline(); } catch(e) { console.error("Travel timeline render failed:", e); }
-                try { initFCM(); } catch(e) { console.error("FCM init failed:", e); }
+                initMap();
+                initTelemetry();
+                loadThemePreferences();
+                syncContactsList();
+                syncSafeZoneUI();
+                renderTravelTimeline();
+                initFCM();
 
                 showScreen("dashboard");
             } else {
