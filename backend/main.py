@@ -9,9 +9,10 @@ from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Depends, Header, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, text
 import jwt
 import bcrypt
 import math
@@ -38,7 +39,7 @@ except ImportError:
 from database import engine, SessionLocal, init_db, Base, get_db, SECRET_KEY
 from models import (
     User, LocationHistory, SafeZone, SafeZoneViolation,
-    EmergencyContact, SOSEvent, EmergencyCircle
+    EmergencyContact, SOSEvent, EmergencyCircle, SMSLog
 )
 
 # Import HazardReport model with alias to avoid name clash
@@ -76,7 +77,33 @@ def startup():
     """Initialize database and Firebase on application startup"""
     try:
         Base.metadata.create_all(bind=engine)
-        print("[✓] Database tables initialized successfully")
+        print("[+] Database tables initialized successfully")
+        
+        # Check and alter users table to add settings_last_breath column if it doesn't exist
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT settings_last_breath FROM users LIMIT 1"))
+        except Exception:
+            db.rollback()
+            print("[*] Adding settings_last_breath column to users table...")
+            db.execute(text("ALTER TABLE users ADD COLUMN settings_last_breath BOOLEAN DEFAULT 1"))
+            db.commit()
+            print("[+] settings_last_breath column added successfully")
+        finally:
+            db.close()
+
+        # Check and alter users table to add settings_location_history column if it doesn't exist
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT settings_location_history FROM users LIMIT 1"))
+        except Exception:
+            db.rollback()
+            print("[*] Adding settings_location_history column to users table...")
+            db.execute(text("ALTER TABLE users ADD COLUMN settings_location_history BOOLEAN DEFAULT 1"))
+            db.commit()
+            print("[+] settings_location_history column added successfully")
+        finally:
+            db.close()
     except Exception as e:
         print(f"[!] Failed to initialize database tables: {e}")
         raise
@@ -88,7 +115,7 @@ def startup():
             try:
                 cred = fb_credentials.Certificate(sa_path)
                 firebase_admin.initialize_app(cred)
-                print(f"[✓] Firebase Admin SDK initialized from {sa_path}")
+                print(f"[+] Firebase Admin SDK initialized from {sa_path}")
             except Exception as e:
                 print(f"[!] Failed to initialize Firebase: {e}")
         else:
@@ -96,6 +123,15 @@ def startup():
                 print(f"[!] Firebase service account not found at {sa_path}")
             else:
                 print("[!] Firebase already initialized")
+
+# ==========================================
+# ROOT INDEX REDIRECT
+# ==========================================
+
+@app.get("/")
+async def root_redirect():
+    """Redirect root access to static frontend index.html"""
+    return RedirectResponse(url="/static/index.html")
 
 # ==========================================
 # HEALTH CHECK ENDPOINT
@@ -210,6 +246,11 @@ class UserResponse(BaseModel):
     sos_active: bool
     is_verified: bool
     created_at: datetime
+    settings_shake_to_alert: Optional[bool] = True
+    settings_hardware_trigger: Optional[bool] = True
+    settings_last_breath: Optional[bool] = True
+    settings_amoled_mode: Optional[bool] = False
+    settings_accent_color: Optional[str] = "accent-blue"
     
     class Config:
         from_attributes = True
@@ -276,6 +317,9 @@ class ResetPasswordRequest(BaseModel):
     code: str
     new_password: str
 
+class VerifyPasswordRequest(BaseModel):
+    password: str
+
 # ==========================================
 # HELPER FUNCTIONS - VALIDATION
 # ==========================================
@@ -334,6 +378,44 @@ def send_fcm_notification(token: str, title: str, body: str, data: Dict[str, str
         return True
     except Exception as e:
         print(f"[FCM] Push failed: {e}")
+        return False
+
+def send_resend_email(to_email: str, subject: str, html_content: str) -> bool:
+    """Send an email using Resend API via standard library urllib (no dependencies needed)"""
+    import urllib.request
+    import json
+    
+    resend_api_key = os.getenv("RESEND_API_KEY", "re_4LkDf6ij_2Xv92GBi5568UbM6j8dDusid")
+    if not resend_api_key:
+        print("[Resend] API key not found in environment")
+        return False
+        
+    url = "https://api.resend.com/emails"
+    headers = {
+        "Authorization": f"Bearer {resend_api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+    payload = {
+        "from": "SafeWatch <onboarding@resend.dev>",
+        "to": [to_email],
+        "subject": subject,
+        "html": html_content
+    }
+    
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req) as response:
+            res_body = response.read().decode("utf-8")
+            print(f"[Resend] Email sent successfully: {res_body}")
+            return True
+    except Exception as e:
+        print(f"[Resend Error] Failed to send email: {e}")
         return False
 
 def calculate_haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -421,23 +503,29 @@ async def api_auth(req: AuthRequest, db: Session = Depends(get_db)):
             print(f"[VERIFICATION CODE] User: {email or phone} | Code: {code}")
             # Try to send email
             if email:
-                gmail_user = os.getenv("GMAIL_USER")
-                gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
-                if gmail_user and gmail_pass:
-                    try:
-                        import smtplib
-                        from email.mime.multipart import MIMEMultipart
-                        from email.mime.text import MIMEText
-                        msg = MIMEMultipart("alternative")
-                        msg["Subject"] = "SafeWatch Verification Code"
-                        msg["From"] = gmail_user
-                        msg["To"] = email
-                        msg.attach(MIMEText(f"Your SafeWatch signup verification code is: {code}", "plain"))
-                        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                            server.login(gmail_user, gmail_pass)
-                            server.sendmail(gmail_user, [email], msg.as_string())
-                    except Exception as e:
-                        print(f"[SMTP ERROR] Verification email failed: {e}")
+                resend_success = send_resend_email(
+                    email,
+                    "SafeWatch Verification Code",
+                    f"<p>Your SafeWatch signup verification code is: <strong>{code}</strong></p>"
+                )
+                if not resend_success:
+                    gmail_user = os.getenv("GMAIL_USER")
+                    gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
+                    if gmail_user and gmail_pass:
+                        try:
+                            import smtplib
+                            from email.mime.multipart import MIMEMultipart
+                            from email.mime.text import MIMEText
+                            msg = MIMEMultipart("alternative")
+                            msg["Subject"] = "SafeWatch Verification Code"
+                            msg["From"] = gmail_user
+                            msg["To"] = email
+                            msg.attach(MIMEText(f"Your SafeWatch signup verification code is: {code}", "plain"))
+                            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                                server.login(gmail_user, gmail_pass)
+                                server.sendmail(gmail_user, [email], msg.as_string())
+                        except Exception as e:
+                            print(f"[SMTP ERROR] Verification email failed: {e}")
             # Try to send SMS/WhatsApp
             if phone:
                 twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
@@ -498,23 +586,29 @@ async def api_auth(req: AuthRequest, db: Session = Depends(get_db)):
             
             # Send code logic
             if user.email:
-                gmail_user = os.getenv("GMAIL_USER")
-                gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
-                if gmail_user and gmail_pass:
-                    try:
-                        import smtplib
-                        from email.mime.multipart import MIMEMultipart
-                        from email.mime.text import MIMEText
-                        msg = MIMEMultipart("alternative")
-                        msg["Subject"] = "SafeWatch Verification Code"
-                        msg["From"] = gmail_user
-                        msg["To"] = user.email
-                        msg.attach(MIMEText(f"Your SafeWatch signup verification code is: {code}", "plain"))
-                        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                            server.login(gmail_user, gmail_pass)
-                            server.sendmail(gmail_user, [user.email], msg.as_string())
-                    except Exception as e:
-                        print(f"[SMTP ERROR] Verification email failed: {e}")
+                resend_success = send_resend_email(
+                    user.email,
+                    "SafeWatch Verification Code",
+                    f"<p>Your SafeWatch signup verification code is: <strong>{code}</strong></p>"
+                )
+                if not resend_success:
+                    gmail_user = os.getenv("GMAIL_USER")
+                    gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
+                    if gmail_user and gmail_pass:
+                        try:
+                            import smtplib
+                            from email.mime.multipart import MIMEMultipart
+                            from email.mime.text import MIMEText
+                            msg = MIMEMultipart("alternative")
+                            msg["Subject"] = "SafeWatch Verification Code"
+                            msg["From"] = gmail_user
+                            msg["To"] = user.email
+                            msg.attach(MIMEText(f"Your SafeWatch signup verification code is: {code}", "plain"))
+                            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                                server.login(gmail_user, gmail_pass)
+                                server.sendmail(gmail_user, [user.email], msg.as_string())
+                        except Exception as e:
+                            print(f"[SMTP ERROR] Verification email failed: {e}")
             if user.phone:
                 twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
                 twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
@@ -615,23 +709,29 @@ async def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_
     
     # Send code logic (SMTP for email, Twilio for phone)
     if user.email:
-        gmail_user = os.getenv("GMAIL_USER")
-        gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
-        if gmail_user and gmail_pass:
-            try:
-                import smtplib
-                from email.mime.multipart import MIMEMultipart
-                from email.mime.text import MIMEText
-                msg = MIMEMultipart("alternative")
-                msg["Subject"] = "SafeWatch Password Reset Code"
-                msg["From"] = gmail_user
-                msg["To"] = user.email
-                msg.attach(MIMEText(f"Your password reset code is: {code}", "plain"))
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(gmail_user, gmail_pass)
-                    server.sendmail(gmail_user, [user.email], msg.as_string())
-            except Exception as e:
-                print(f"[SMTP ERROR] Forgot email failed: {e}")
+        resend_success = send_resend_email(
+            user.email,
+            "SafeWatch Password Reset Code",
+            f"<p>Your password reset code is: <strong>{code}</strong></p>"
+        )
+        if not resend_success:
+            gmail_user = os.getenv("GMAIL_USER")
+            gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
+            if gmail_user and gmail_pass:
+                try:
+                    import smtplib
+                    from email.mime.multipart import MIMEMultipart
+                    from email.mime.text import MIMEText
+                    msg = MIMEMultipart("alternative")
+                    msg["Subject"] = "SafeWatch Password Reset Code"
+                    msg["From"] = gmail_user
+                    msg["To"] = user.email
+                    msg.attach(MIMEText(f"Your password reset code is: {code}", "plain"))
+                    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                        server.login(gmail_user, gmail_pass)
+                        server.sendmail(gmail_user, [user.email], msg.as_string())
+                except Exception as e:
+                    print(f"[SMTP ERROR] Forgot email failed: {e}")
                 
     if user.phone:
         twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
@@ -684,6 +784,16 @@ async def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db
     
     return {"status": "success", "message": "Password successfully reset."}
 
+@app.post("/api/auth/verify-password")
+async def verify_user_password(
+    req: VerifyPasswordRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Verify password for high-privilege/disarm operations"""
+    if not verify_password(req.password, current_user.password_hash):
+        raise HTTPException(status_code=401, detail="Incorrect password")
+    return {"status": "success", "message": "Password verified"}
+
 # ==========================================
 # API ENDPOINTS: PROFILE
 # ==========================================
@@ -734,7 +844,7 @@ async def api_sync(
     
     # Check for Last Breath Protocol (battery critical)
     last_breath = False
-    if sync.battery < 5.0 and user.current_battery >= 5.0:
+    if getattr(user, "settings_last_breath", True) and sync.battery < 5.0 and user.current_battery >= 5.0:
         last_breath = True
         sos_event = SOSEvent(
             user_id=user.id,
@@ -1148,6 +1258,8 @@ async def api_settings(
         user.settings_shake_to_alert = settings["shake_to_alert"]
     if "hardware_trigger" in settings:
         user.settings_hardware_trigger = settings["hardware_trigger"]
+    if "last_breath" in settings:
+        user.settings_last_breath = settings["last_breath"]
     if "amoled_mode" in settings:
         user.settings_amoled_mode = settings["amoled_mode"]
     if "accent_color" in settings:
@@ -1161,6 +1273,7 @@ async def api_settings(
         "settings": {
             "shake_to_alert": user.settings_shake_to_alert,
             "hardware_trigger": user.settings_hardware_trigger,
+            "last_breath": getattr(user, "settings_last_breath", True),
             "amoled_mode": user.settings_amoled_mode,
             "accent_color": user.settings_accent_color
         }
@@ -1206,8 +1319,7 @@ async def trigger_sos(
         f"Last known location: {maps_url} "
         f"Blood Group: {user.blood_group}"
     )
-    
-    # Notify all emergency contacts via SMS (if Twilio is configured)
+      # Notify all emergency contacts via SMS (if Twilio is configured)
     sms_results = []
     twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
     twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
@@ -1243,57 +1355,62 @@ async def trigger_sos(
                         )
                         status_str = "sent (both SMS and WhatsApp)" if whatsapp_sent else "sent (SMS only)"
                         sms_results.append({"contact": contact.name, "status": status_str})
+                        
+                        db_log = SMSLog(
+                            user_id=user.id,
+                            recipient_name=contact.name,
+                            recipient_phone=clean_phone,
+                            message_body=sos_message,
+                            status="sent",
+                            error_message=None
+                        )
+                        db.add(db_log)
                     except Exception as sms_err:
-                        sms_results.append({"contact": contact.name, "status": f"failed: {str(sms_err)}"})
-
-        except ImportError:
-            sms_results.append({"status": "twilio not installed - run: pip install twilio"})
+                        err_str = str(sms_err)
+                        sms_results.append({"contact": contact.name, "status": f"failed: {err_str}"})
+                        db_log = SMSLog(
+                            user_id=user.id,
+                            recipient_name=contact.name,
+                            recipient_phone=clean_phone,
+                            message_body=sos_message,
+                            status="failed",
+                            error_message=err_str
+                        )
+                        db.add(db_log)
+            db.commit()
+        except Exception as outer_err:
+            err_msg = f"Twilio client init error: {str(outer_err)}"
+            sms_results.append({"status": err_msg})
+            for contact in user.emergency_contacts:
+                if contact.phone:
+                    db_log = SMSLog(
+                        user_id=user.id,
+                        recipient_name=contact.name,
+                        recipient_phone=normalize_phone_number(contact.phone),
+                        message_body=sos_message,
+                        status="failed",
+                        error_message=err_msg
+                    )
+                    db.add(db_log)
+            db.commit()
     else:
-        sms_results.append({"status": "SMS not configured - add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER to .env"})
+        err_msg = "SMS not configured - add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER to .env"
+        sms_results.append({"status": err_msg})
+        for contact in user.emergency_contacts:
+            if contact.phone:
+                db_log = SMSLog(
+                    user_id=user.id,
+                    recipient_name=contact.name,
+                    recipient_phone=normalize_phone_number(contact.phone),
+                    message_body=sos_message,
+                    status="failed",
+                    error_message=err_msg
+                )
+                db.add(db_log)
+        db.commit()
     
-    # Email notification via SMTP (if Gmail is configured)
-    email_result = None
-    gmail_user = os.getenv("GMAIL_USER")
-    gmail_pass = os.getenv("GMAIL_APP_PASSWORD")
-    
-    if gmail_user and gmail_pass and user.emergency_contacts:
-        try:
-            import smtplib
-            from email.mime.multipart import MIMEMultipart
-            from email.mime.text import MIMEText
-            
-            email_body = f"""
-            <h2 style="color:red;">⚠️ SAFEWATCH SOS ALERT</h2>
-            <p><b>{user.name}</b> has triggered an emergency SOS alert!</p>
-            <p>📍 <a href="{maps_url}">Click here to view their location on Google Maps</a></p>
-            <p>🩸 Blood Group: <b>{user.blood_group}</b></p>
-            <p>📞 Their emergency phone: <b>{user.emergency_phone or 'Not set'}</b></p>
-            <p>⏰ Time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
-            <br><p style="color:gray;font-size:small;">Sent by SafeWatch Personal Safety System</p>
-            """
-            
-            # Collect recipient emails from emergency contacts who have emails
-            # Also send to the user's own email for record
-            recipients = [user.email] if user.email else []
-            
-            if recipients:
-                msg = MIMEMultipart("alternative")
-                msg["Subject"] = f"🚨 SOS ALERT from {user.name} - SafeWatch"
-                msg["From"] = gmail_user
-                msg["To"] = ", ".join(recipients)
-                msg.attach(MIMEText(email_body, "html"))
-                
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(gmail_user, gmail_pass)
-                    server.sendmail(gmail_user, recipients, msg.as_string())
-                
-                email_result = "sent"
-            else:
-                email_result = "no recipients"
-        except Exception as e:
-            email_result = f"failed: {str(e)}"
-    else:
-        email_result = "not configured - add GMAIL_USER and GMAIL_APP_PASSWORD to .env"
+    # Email notification via SMTP or Resend (disabled as SOS alerts should not go to the registered email address)
+    email_result = "disabled"
     
     # Also notify circle members via FCM if they have tokens
     fcm_results = []
@@ -1420,6 +1537,31 @@ async def get_sos_history(current_user: User = Depends(get_current_user), db: Se
                 "timestamp": e.created_at.isoformat()
             }
             for e in events
+        ]
+    }
+
+@app.get("/api/sms-logs")
+async def get_sms_logs(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get SMS logs history"""
+    user = current_user
+    
+    logs = db.query(SMSLog).filter(
+        SMSLog.user_id == user.id
+    ).order_by(desc(SMSLog.created_at)).limit(100).all()
+    
+    return {
+        "status": "success",
+        "sms_logs": [
+            {
+                "id": log.id,
+                "recipient_name": log.recipient_name,
+                "recipient_phone": log.recipient_phone,
+                "message_body": log.message_body,
+                "status": log.status,
+                "error_message": log.error_message,
+                "timestamp": log.created_at.isoformat()
+            }
+            for log in logs
         ]
     }
 

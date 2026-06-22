@@ -20,6 +20,13 @@ DATABASE_URL = os.getenv(
     "postgresql://postgres:password@localhost:5432/safewatch"
 )
 
+# Resolve relative SQLite database paths to absolute paths relative to project root
+if DATABASE_URL.startswith("sqlite:///"):
+    db_path = DATABASE_URL[10:]
+    if not os.path.isabs(db_path):
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        DATABASE_URL = f"sqlite:///{os.path.abspath(os.path.join(project_root, db_path))}"
+
 SECRET_KEY = os.getenv(
     "SECRET_KEY",
     "your-secret-key-change-this-in-production"
@@ -36,7 +43,7 @@ try:
         try:
             with temp_engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-            print("[✓] PostgreSQL connection successful")
+            print("[+] PostgreSQL connection successful")
         finally:
             temp_engine.dispose()
 
@@ -83,7 +90,7 @@ def init_db():
     """
     try:
         Base.metadata.create_all(bind=engine)
-        print("[✓] Database tables initialized")
+        print("[+] Database tables initialized")
     except Exception as e:
         print(f"[!] Failed to initialize database: {e}")
         raise

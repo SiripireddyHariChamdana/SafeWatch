@@ -25,7 +25,7 @@ if __name__ == "__main__":
     is_ci = os.environ.get("CI", "").lower() in ("true", "1", "yes")
 
     uvicorn.run(
-        app,
+        "main:app",
         host="0.0.0.0",
         port=8000,
         reload=not is_ci,

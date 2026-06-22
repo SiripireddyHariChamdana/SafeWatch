@@ -179,11 +179,6 @@
                     <p class="app-welcome-text" id="profile-welcome">Hello, User</p>
                 </div>
                 <div class="header-profile-telemetry">
-                    <div id="btn-dashboard-profile" class="header-avatar-circle cursor-pointer">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                        </svg>
-                    </div>
                     <!-- Keep elements to prevent JS errors -->
                     <span id="profile-name" style="display: none;">OPERATOR: SECURE</span>
                     <button id="btn-logout-dummy" style="display: none;"></button>
@@ -191,69 +186,36 @@
                 </div>
             </header>
 
-            <!-- Top Grid of 2 Main Cards -->
-            <div class="top-actions-grid">
-                <!-- Card 1: Live GPS -->
-                <div id="card-live-gps" class="action-card border-cyan cursor-pointer" onclick="document.getElementById('map-overlay-modal').classList.add('active'); setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);">
-                    <div class="action-icon-circle bg-cyan-translucent">
-                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#00F2FF" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <circle cx="12" cy="12" r="3"/>
-                            <line x1="12" y1="1" x2="12" y2="4"/>
-                            <line x1="12" y1="20" x2="12" y2="23"/>
-                            <line x1="1" y1="12" x2="4" y2="12"/>
-                            <line x1="20" y1="12" x2="23" y2="12"/>
-                        </svg>
-                    </div>
-                    <span class="action-card-label">Live GPS</span>
+            <!-- Reorganized Main Features Grid (Exactly 7 features) -->
+            <div class="tools-grid-simple" style="margin-top: 15px;">
+                <!-- 1. SOS Alert (Prominent High-Visibility Emergency Trigger) -->
+                <div id="card-sos-alert" class="tool-card-simple border-red cursor-pointer" style="grid-column: span 2; background: rgba(255, 0, 0, 0.08) !important; border-color: rgba(255, 0, 0, 0.4) !important;">
+                    <div class="tool-icon-simple color-red" style="font-size: 32px; width: 60px; height: 60px;">🚨</div>
+                    <span class="tool-label-simple" style="font-size: 16px; font-weight: 700; color: #FF0000; text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);">SOS ALERT</span>
                 </div>
 
-                <!-- Card 2: SOS Alert -->
-                <div id="card-sos-alert" class="action-card border-red cursor-pointer" onclick="document.getElementById('btn-sos-trigger').click()">
-                    <div class="action-icon-circle bg-red-translucent">
-                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#FF0000" stroke-width="2">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                            <line x1="12" y1="9" x2="12" y2="13"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                    </div>
-                    <span class="action-card-label">SOS Alert</span>
+                <!-- 2. Live Location Tracking (Full-Screen Page) -->
+                <div id="card-live-location" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-cyan">🎯</div>
+                    <span class="tool-label-simple">Live Location Tracking</span>
                 </div>
-            </div>
 
-            <!-- Tools & History Heading -->
-            <h3 class="section-title">Tools & History</h3>
-
-            <!-- Tools 2-Column Grid (6 Cards) -->
-            <div class="tools-grid-simple">
-                <!-- 1. Safety Timer -->
+                <!-- 3. Safety Timer -->
                 <div id="card-safety-timer" class="tool-card-simple cursor-pointer">
                     <div class="tool-icon-simple color-magenta">⏱️</div>
                     <span class="tool-label-simple">Safety Timer</span>
                 </div>
 
-                <!-- 2. Emergency Circle -->
+                <!-- 4. Voice Recording -->
+                <div id="card-voice-recorder" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-cyan">🎙️</div>
+                    <span class="tool-label-simple">Voice Recording</span>
+                </div>
+
+                <!-- 5. Emergency Circle -->
                 <div id="card-emergency-circle" class="tool-card-simple cursor-pointer">
                     <div class="tool-icon-simple color-cyan">👥</div>
                     <span class="tool-label-simple">Emergency Circle</span>
-                </div>
-
-                <!-- 3. Voice Evidence (Maps to fake call) -->
-                <div id="card-fake-call" class="tool-card-simple cursor-pointer">
-                    <div class="tool-icon-simple color-cyan">🎤</div>
-                    <span class="tool-label-simple">Voice Evidence</span>
-                </div>
-
-                <!-- 4. Family Tracking (Maps to safezone manager) -->
-                <div id="card-safezone-manager" class="tool-card-simple cursor-pointer">
-                    <div class="tool-icon-simple color-magenta">👪</div>
-                    <span class="tool-label-simple">Family Tracking</span>
-                </div>
-
-                <!-- 5. Live Tracking (Maps to map modal) -->
-                <div id="card-live-tracking" class="tool-card-simple cursor-pointer" onclick="document.getElementById('map-overlay-modal').classList.add('active'); setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);">
-                    <div class="tool-icon-simple color-cyan">🎯</div>
-                    <span class="tool-label-simple">Live Tracking</span>
                 </div>
 
                 <!-- 6. Travel History -->
@@ -261,12 +223,25 @@
                     <div class="tool-icon-simple color-gray">🕒</div>
                     <span class="tool-label-simple">Travel History</span>
                 </div>
+
+                <!-- 7. Fake Call -->
+                <div id="card-fake-call" class="tool-card-simple cursor-pointer">
+                    <div class="tool-icon-simple color-cyan">📞</div>
+                    <span class="tool-label-simple">Fake Call</span>
+                </div>
             </div>
 
-            <!-- Hidden dummy elements to satisfy JS requirements -->
+            <!-- Hidden dummy elements to prevent JS errors (compatibility fallback) -->
             <div style="display: none !important;">
                 <button id="btn-sos-trigger"></button>
                 <div id="card-master-settings"></div>
+                <div id="card-safezone-manager"></div>
+                <div id="card-last-breath"></div>
+                <div id="card-shake-trigger"></div>
+                <div id="card-theme-changing"></div>
+                <div id="card-hardware-triggers"></div>
+                <div id="card-live-gps"></div>
+                <div id="card-live-tracking"></div>
                 <div id="tel-speed">0.0</div>
                 <div id="bar-speed"></div>
                 <div id="tel-battery">100</div>
@@ -279,49 +254,52 @@
                 <div id="timer-tool-status"></div>
             </div>
         </section>
-
-        <!-- SCREEN 4: USER PROFILE MANAGER -->
         <section id="screen-profile" class="app-screen">
-            <div class="glass-card panel-container">
-                <div class="panel-header">
-                    <h2 class="orbitron-heading neon-text-blue">TELEMETRY OPERATOR DEPLOYMENT</h2>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="btn-logout" class="cyber-btn-outline font-orbitron btn-small btn-red">DISCONNECT</button>
-                        <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
-                    </div>
+            <div class="glass-card panel-container" style="max-width: 480px; margin: 0 auto;">
+                <div class="panel-header" style="justify-content: center; position: relative;">
+                    <h2 class="orbitron-heading neon-text-blue" style="font-size: 1.3rem;">PROFILE &amp; SETTINGS</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);">← BACK</button>
                 </div>
-                <form id="profile-form" class="auth-form">
-                    <div class="profile-avatar-selector-section">
-                        <div class="form-group">
-                            <label>OPERATOR BEACON IDENTITY AVATAR</label>
-                            <div class="avatar-badge-strip">
-                                <div class="avatar-badge active" data-id="avatar-shield">🛡️ SHIELD</div>
-                                <div class="avatar-badge" data-id="avatar-eye">👁️ BEACON</div>
-                                <div class="avatar-badge" data-id="avatar-falcon">🦅 FALCON</div>
-                                <div class="avatar-badge" data-id="avatar-ghost">👻 STEALTH</div>
+
+                <!-- Avatar Block -->
+                <div class="settings-avatar-container">
+                    <div class="avatar-large-circle" id="profile-avatar-display">👤</div>
+                    <div class="avatar-edit-badge" id="btn-edit-profile-trigger" title="Edit Profile Details">✏️</div>
+                </div>
+
+                <!-- Collapsible Profile Edit Form (Hidden by default) -->
+                <div id="profile-edit-section" class="settings-block glass-card hidden mt-15 mb-15" style="border: 1px solid rgba(0, 242, 255, 0.2); padding: 20px; border-radius: 20px;">
+                    <h3 class="orbitron-heading font-small neon-text-blue mb-15">EDIT IDENTITY TELEMETRY</h3>
+                    <form id="profile-form" class="auth-form">
+                        <div class="profile-avatar-selector-section">
+                            <div class="form-group">
+                                <label style="font-size: 0.75rem;">SELECT PROFILE AVATAR</label>
+                                <div class="avatar-badge-strip" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <div class="avatar-badge active" data-id="avatar-shield" style="font-size: 0.75rem; padding: 6px 10px;">🛡️ SHIELD</div>
+                                    <div class="avatar-badge" data-id="avatar-eye" style="font-size: 0.75rem; padding: 6px 10px;">👁️ BEACON</div>
+                                    <div class="avatar-badge" data-id="avatar-falcon" style="font-size: 0.75rem; padding: 6px 10px;">🦅 FALCON</div>
+                                    <div class="avatar-badge" data-id="avatar-ghost" style="font-size: 0.75rem; padding: 6px 10px;">👻 STEALTH</div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="grid-2-col-equal">
+                        
                         <div class="form-group">
-                            <label for="profile-name-input">OPERATOR FULL LEGAL NAME</label>
-                            <input type="text" id="profile-name-input" class="critical-input" required>
+                            <label for="profile-name-input" style="font-size: 0.75rem;">OPERATOR FULL NAME</label>
+                            <input type="text" id="profile-name-input" class="critical-input" required style="padding: 10px 14px !important; font-size: 0.9rem !important;">
                         </div>
                         <div class="form-group">
-                            <label for="profile-phone-input">EMERGENCY HANDSHAKE PHONE</label>
-                            <input type="text" id="profile-phone-input" class="critical-input" required>
+                            <label for="profile-phone-input" style="font-size: 0.75rem;">EMERGENCY HANDSHAKE PHONE</label>
+                            <input type="text" id="profile-phone-input" class="critical-input" required style="padding: 10px 14px !important; font-size: 0.9rem !important;">
                         </div>
-                    </div>
 
-                    <div class="grid-2-col-equal">
-                        <div class="form-group">
-                            <label for="profile-email-input">REGISTERED EMAIL IDENTIFIER (LOCKED)</label>
-                            <input type="text" id="profile-email-input" class="critical-input" disabled style="opacity: 0.6;">
+                        <div class="form-group" style="display: none !important;">
+                            <!-- Kept hidden to prevent JS binding errors on profile-email-input -->
+                            <input type="text" id="profile-email-input">
                         </div>
+
                         <div class="form-group">
-                            <label for="profile-blood-input">MEDICAL BLOOD CLASSIFICATION</label>
-                            <select id="profile-blood-input" class="critical-input select-styled">
+                            <label for="profile-blood-input" style="font-size: 0.75rem;">BLOOD CLASSIFICATION</label>
+                            <select id="profile-blood-input" class="critical-input select-styled" style="padding: 10px 14px !important; font-size: 0.9rem !important; height: auto !important;">
                                 <option value="O+">O Positive (O+)</option>
                                 <option value="O-">O Negative (O-)</option>
                                 <option value="A+">A Positive (A+)</option>
@@ -332,15 +310,92 @@
                                 <option value="AB-">AB Negative (AB-)</option>
                             </select>
                         </div>
+
+                        <div class="form-group">
+                            <label for="profile-address-input" style="font-size: 0.75rem;">HOME ADDRESS</label>
+                            <textarea id="profile-address-input" class="critical-input textarea-styled" rows="2" required style="padding: 10px 14px !important; font-size: 0.9rem !important;"></textarea>
+                        </div>
+
+                        <button type="submit" class="cyber-btn btn-blue font-orbitron w-100" style="padding: 10px 20px; font-size: 0.85rem;">SAVE PROFILE</button>
+                    </form>
+                </div>
+
+                <!-- Section 1: Advanced Engineering Tools -->
+                <div class="settings-section-header text-neon-pink">Advanced Engineering Tools</div>
+                <div class="settings-rows-list">
+                    <!-- Row 1: Hardware Triggers -->
+                    <div class="settings-row-item" id="row-settings-hardware">
+                        <div class="settings-row-left">
+                            <span class="settings-row-icon">🔌</span>
+                            <span class="settings-row-label">Hardware Triggers</span>
+                        </div>
+                        <span class="settings-row-chevron">&gt;</span>
                     </div>
 
-                    <div class="form-group">
-                        <label for="profile-address-input">OPERATIONAL LOCK HOME ADDRESS</label>
-                        <textarea id="profile-address-input" class="critical-input textarea-styled" rows="3" required></textarea>
+                    <!-- Row 2: Last Breath Protocol -->
+                    <div class="settings-row-item" id="row-settings-lastbreath">
+                        <div class="settings-row-left">
+                            <span class="settings-row-icon">🔋</span>
+                            <span class="settings-row-label">Last Breath Protocol</span>
+                        </div>
+                        <span class="settings-row-chevron">&gt;</span>
                     </div>
 
-                    <button type="submit" class="cyber-btn btn-blue font-orbitron">SAVE PROFILE TELEMETRY</button>
-                </form>
+                    <!-- Row 3: SafeZone Manager -->
+                    <div class="settings-row-item" id="row-settings-safezone">
+                        <div class="settings-row-left">
+                            <span class="settings-row-icon">📍</span>
+                            <span class="settings-row-label">SafeZone Manager</span>
+                        </div>
+                        <span class="settings-row-chevron">&gt;</span>
+                    </div>
+
+                    <!-- Row 4: Safety Radar Heatmap -->
+                    <div class="settings-row-item" id="row-settings-heatmap">
+                        <div class="settings-row-left">
+                            <span class="settings-row-icon">📡</span>
+                            <span class="settings-row-label">Safety Radar Heatmap</span>
+                        </div>
+                        <span class="settings-row-chevron">&gt;</span>
+                    </div>
+                </div>
+
+                <!-- Section 2: System & Evidence -->
+                <div class="settings-section-header text-neon-cyan">System &amp; Evidence</div>
+                <div class="settings-rows-list">
+                    <!-- Row 5: Emergency Contacts -->
+                    <div class="settings-row-item" id="row-settings-contacts">
+                        <div class="settings-row-left">
+                            <span class="settings-row-icon">👥</span>
+                            <span class="settings-row-label">Emergency Contacts</span>
+                        </div>
+                        <span class="settings-row-chevron">&gt;</span>
+                    </div>
+
+                    <!-- Row 6: Voice Notes -->
+                    <div class="settings-row-item" id="row-settings-voicenotes">
+                        <div class="settings-row-left">
+                            <span class="settings-row-icon">🎙️</span>
+                            <span class="settings-row-label">Voice Notes</span>
+                        </div>
+                        <span class="settings-row-chevron">&gt;</span>
+                    </div>
+
+                    <!-- Row 7: App Settings -->
+                    <div class="settings-row-item" id="row-settings-app">
+                        <div class="settings-row-left">
+                            <span class="settings-row-icon">⚙️</span>
+                            <span class="settings-row-label">App Settings</span>
+                        </div>
+                        <span class="settings-row-chevron">&gt;</span>
+                    </div>
+                </div>
+
+                <!-- Logout Button -->
+                <button id="btn-settings-logout" class="settings-logout-btn">Logout from SafeWatch</button>
+
+                <!-- Hidden elements to preserve JS compatibility -->
+                <button id="btn-logout" style="display: none !important;"></button>
             </div>
         </section>
 
@@ -349,7 +404,7 @@
             <div class="glass-card panel-container">
                 <div class="panel-header">
                     <h2 class="orbitron-heading neon-text-purple">SAFEZONE GEODISTANCE CONFIG</h2>
-                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings">CLOSE GATEWAY</button>
                 </div>
 
                 <div class="safezone-layout">
@@ -404,145 +459,258 @@
                 </div>
             </div>
         </section>
-
-        <!-- SCREEN 8: MASTER SETTINGS CONFIG -->
+        <!-- SCREEN 8: MASTER SETTINGS CONFIG (Consolidated options) -->
         <section id="screen-settings" class="app-screen">
-            <div class="glass-card panel-container">
-                <div class="panel-header">
-                    <h2 class="orbitron-heading neon-text-purple">SYSTEM PREFERENCES & GATEWAYS</h2>
-                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">CLOSE GATEWAY</button>
+            <div class="glass-card panel-container" style="max-width: 480px; margin: 0 auto;">
+                <div class="panel-header" style="justify-content: center; position: relative;">
+                    <h2 class="orbitron-heading neon-text-purple" style="font-size: 1.3rem;">⚙️ SETTINGS &amp; CONTROLS</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);">← BACK</button>
                 </div>
 
+                <div class="settings-layout" style="grid-template-columns: 1fr; gap: 15px; margin-top: 20px;">
+                    <div class="settings-rows-list">
+                        <!-- Button 1: Profile & Identity -->
+                        <div class="settings-row-item" id="settings-btn-profile">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">👤</span>
+                                <span class="settings-row-label">Profile &amp; Identity Settings</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+
+                        <!-- Button 2: Hardware Triggers -->
+                        <div class="settings-row-item" id="settings-btn-hardware">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">🔌</span>
+                                <span class="settings-row-label">Hardware Triggers</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+
+                        <!-- Button 3: Last Breath Protocol -->
+                        <div class="settings-row-item" id="settings-btn-lastbreath">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">🔋</span>
+                                <span class="settings-row-label">Last Breath Protocol</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+
+                        <!-- Button 4: Shake to Alert -->
+                        <div class="settings-row-item" id="settings-btn-shake">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">📳</span>
+                                <span class="settings-row-label">Shake to SOS Trigger</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+
+                        <!-- Button 5: Themes -->
+                        <div class="settings-row-item" id="settings-btn-themes">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">🎨</span>
+                                <span class="settings-row-label">Themes &amp; Accent Customizer</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+                    </div>
+
+                    <!-- Page level logout button -->
+                    <button id="btn-settings-logout-page" class="settings-logout-btn">Logout from SafeWatch</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN: LAST BREATH PROTOCOL -->
+        <section id="screen-last-breath" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-blue">🔋 LAST BREATH PROTOCOL</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings">← BACK</button>
+                </div>
                 <div class="settings-layout">
-                    <!-- BLOCK 1: HARDWARE AND SHAKE TRIGGER PROTOCOLS -->
                     <div class="settings-block glass-card">
-                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">SECURITY ALIGNMENT TRIGGERS</h3>
-                        
-                        <div class="settings-control-row">
-                            <div class="ctrl-info">
-                                <span class="ctrl-label">SHAKE TO BROADCAST SOS</span>
-                                <span class="ctrl-desc">Emulate immediate alert dispatch if mobile accelerometer detects sharp rapid motion.</span>
+                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">LOW BATTERY AUTO SOS</h3>
+                        <p class="settings-btn-desc mb-15">Automatically broadcasts an emergency SOS distress signal if your device battery drops below 5%, sending your exact coordinates to emergency contacts before powering down.</p>
+                        <div class="settings-btn-row border-top-thin">
+                            <div class="settings-btn-info">
+                                <span class="settings-btn-title">ENABLE LAST BREATH</span>
+                                <span class="settings-btn-desc">Toggle automated transmission logic.</span>
                             </div>
-                            <div class="ctrl-trigger">
-                                <button id="btn-toggle-shake" class="toggle-capsule active"></button>
-                            </div>
-                        </div>
-
-                        <div class="settings-control-row border-top-thin">
-                            <div class="ctrl-info">
-                                <span class="ctrl-label">SHIFT + S + S HOTKEY TRIGGERS</span>
-                                <span class="ctrl-desc">Intercept key event combo locally to push SOS broadcast instantly.</span>
-                            </div>
-                            <div class="ctrl-trigger">
-                                <button id="btn-toggle-hardware" class="toggle-capsule active"></button>
-                            </div>
-                        </div>
-
-                        <!-- Accelerometer Visual Shake Trigger button for desktop test -->
-                        <div class="shake-test-box mt-10">
-                            <button id="btn-shake-emulate" class="cyber-btn-outline btn-red font-orbitron btn-small w-100">SIMULATE SHAKE DISPATCH</button>
+                            <button id="btn-toggle-lastbreath-card" class="settings-feature-btn active">
+                                <span class="btn-status-dot"></span>
+                                <span class="btn-status-text">ENABLED</span>
+                            </button>
                         </div>
                     </div>
-
-                    <!-- BLOCK 2: SYSTEM THEME VISUALS -->
                     <div class="settings-block glass-card">
-                        <h3 class="orbitron-heading font-small neon-text-purple mb-10">PERSONALIZATION SUITE</h3>
-                        
-                        <div class="settings-control-row">
-                            <div class="ctrl-info">
-                                <span class="ctrl-label">AMOLED ABSOLUTE DARK MODE</span>
-                                <span class="ctrl-desc">Switch background navy gradients into pure deep space pitch black (#000000).</span>
-                            </div>
-                            <div class="ctrl-trigger">
-                                <button id="btn-toggle-amoled" class="toggle-capsule"></button>
-                            </div>
-                        </div>
-
-                        <div class="settings-control-row border-top-thin">
-                            <div class="ctrl-info">
-                                <span class="ctrl-label">THEME ACCENT FOCUS</span>
-                                <span class="ctrl-desc">Select the neon frequency highlight across the application viewport.</span>
-                            </div>
-                            <div class="accent-color-selector mt-10">
-                                <button class="accent-dot dot-blue active" data-accent="accent-blue"></button>
-                                <button class="accent-dot dot-purple" data-accent="accent-purple"></button>
-                                <button class="accent-dot dot-green" data-accent="accent-green"></button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- BLOCK 3: ATOMIC DATA PANIC PURGE -->
-                    <div class="settings-block glass-card nuclear-card col-span-2">
-                        <h3 class="orbitron-heading font-small neon-text-red mb-10">ATOMIC DATA PANIC PROTOCOL</h3>
-                        <p class="desc mb-15">Activating this locks a complete wipe trigger to the backend, clearing location tracking records, violations, emergency direct dials, and video/audio vaults instantly.</p>
-                        <button id="btn-panic-wipe" class="cyber-btn btn-red font-orbitron w-100">EXECUTE PANIC PURGE WIPE</button>
-                    </div>
-
-                    <!-- BLOCK 3.5: FIREBASE CLOUD MESSAGING (FCM) CONFIGURATION -->
-                    <div class="settings-block glass-card col-span-2">
-                        <h3 class="orbitron-heading font-small neon-text-green mb-10">FIREBASE CLOUD MESSAGING (FCM) GATEWAY</h3>
-                        <p class="desc mb-10">Configure your FCM Web App credentials. SafeWatch will request notification permissions and register the device token with the database for automated peer alerts.</p>
-                        
-                        <div class="fcm-config-form">
-                            <div class="grid-2-col">
-                                <div class="form-group">
-                                    <label for="fcm-sender-id">SENDER ID (messagingSenderId)</label>
-                                    <input type="text" id="fcm-sender-id" class="critical-input" placeholder="e.g. 195352003055" value="195352003055">
-                                </div>
-                                <div class="form-group">
-                                    <label for="fcm-project-id">PROJECT ID</label>
-                                    <input type="text" id="fcm-project-id" class="critical-input" placeholder="e.g. safewatch-4ff20" value="safewatch-4ff20">
-                                </div>
-                            </div>
-                            <div class="form-group mt-10">
-                                <label for="fcm-vapid-key">WEB PUSH PUBLIC VAPID KEY</label>
-                                <input type="text" id="fcm-vapid-key" class="critical-input" placeholder="Enter VAPID key" value="BHTAcOIXuSQ_6lZuT7ydhKHECQXr9sd6VJOPFSHC2Dv3tS48gxcftOWMQnHY7SdwXKNVAquoj21kwylAow4Ivig">
-                            </div>
-                            <div class="grid-2-col mt-10">
-                                <div class="form-group">
-                                    <label for="fcm-api-key">API KEY (OPTIONAL)</label>
-                                    <input type="text" id="fcm-api-key" class="critical-input" placeholder="AIzaSy...">
-                                </div>
-                                <div class="form-group">
-                                    <label for="fcm-app-id">APP ID (OPTIONAL)</label>
-                                    <input type="text" id="fcm-app-id" class="critical-input" placeholder="1:195352003055:web:...">
-                                </div>
-                            </div>
-                            
-                            <div class="settings-control-row mt-15 border-top-thin pt-10">
-                                <div class="ctrl-info">
-                                    <span class="ctrl-label">FCM DEVICE TOKEN STATUS</span>
-                                    <span id="fcm-token-status-badge" class="badge-status text-red" style="font-weight: bold; margin-left: 10px;">UNREGISTERED</span>
-                                    <span id="fcm-token-display" class="ctrl-desc font-mono" style="word-break: break-all; margin-top: 5px; font-size: 0.8em; color: var(--text-dim, #a0a0a0);">No active registration token.</span>
-                                </div>
-                                <div class="ctrl-trigger">
-                                    <button id="btn-fcm-register" class="cyber-btn btn-green font-orbitron btn-small">REGISTER DEVICE</button>
-                                </div>
-                            </div>
-
-                            <div class="settings-control-row mt-10 border-top-thin pt-10">
-                                <div class="ctrl-info">
-                                    <span class="ctrl-label">SIMULATION / TEST VECTOR</span>
-                                    <span class="ctrl-desc">Register a simulated mock token if running without full FCM settings, then dispatch a test payload from backend.</span>
-                                </div>
-                                <div class="ctrl-trigger" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                    <button id="btn-fcm-mock" class="cyber-btn-outline btn-purple-glow font-orbitron btn-small">MOCK TOKEN</button>
-                                    <button id="btn-fcm-test-push" class="cyber-btn-outline btn-blue font-orbitron btn-small">TEST PUSH</button>
+                        <h3 class="orbitron-heading font-small neon-text-purple mb-10">BATTERY DIAGNOSTICS</h3>
+                        <div class="telemetry-item mt-10">
+                            <span class="telemetry-label">CURRENT TELEMETRY STATUS</span>
+                            <div style="display: flex; align-items: center; gap: 15px; margin: 10px 0;">
+                                <div class="telemetry-value" style="font-size: 2.5rem;"><span id="lastbreath-battery-val">100</span><span class="unit">%</span></div>
+                                <div style="flex-grow: 1;">
+                                    <div class="telemetry-bar-bg">
+                                        <div id="lastbreath-battery-bar" class="telemetry-bar-fill green-bg" style="width: 100%;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- BLOCK 4: LIVE DATABASE INSPECTOR -->
-                    <div class="settings-block glass-card col-span-2">
-                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">LIVE SYSTEM DATABASE INSPECTOR</h3>
-                        <p class="desc mb-10">Real-time persistent state synced inside system_data.json. Refresh to pull live data logs.</p>
-                        <button id="btn-refresh-inspector" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow mb-10 w-100">REFRESH DATABASE LOGS</button>
-                        <pre id="raw-db-inspector" class="raw-json-inspector">Click Refresh to load database logs.</pre>
+                        <p class="settings-btn-desc mb-15">You can manually simulate a critical low battery level to verify the Last Breath SOS dispatch protocol functionality.</p>
+                        <button id="btn-simulate-low-battery" class="cyber-btn btn-blue font-orbitron w-100">🔌 SIMULATE CRITICAL BATTERY (&lt;5%)</button>
                     </div>
                 </div>
             </div>
         </section>
+
+        <!-- SCREEN: SHAKE TO SOS TRIGGER -->
+        <section id="screen-shake-trigger" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-blue">📳 SHAKE TO SOS TRIGGER</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings">← BACK</button>
+                </div>
+                <div class="settings-layout">
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">RAPID MOTION DETECTOR</h3>
+                        <p class="settings-btn-desc mb-15">Enable or disable rapid motion dispatch. When active, shaking your phone rapidly will automatically launch the emergency distress cover screen and transmit SOS beacons.</p>
+                        <div class="settings-btn-row border-top-thin">
+                            <div class="settings-btn-info">
+                                <span class="settings-btn-title">SHAKE TO SOS STATUS</span>
+                                <span class="settings-btn-desc">Accelerometer shake monitoring toggle.</span>
+                            </div>
+                            <button id="btn-toggle-shake-card" class="settings-feature-btn active">
+                                <span class="btn-status-dot"></span>
+                                <span class="btn-status-text">ENABLED</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-purple mb-10">MOTION CALIBRATION & SIMULATION</h3>
+                        <div class="telemetry-item mt-10">
+                            <span class="telemetry-label">DEVICE MOTION ACTIVITY</span>
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                    <span>X-Axis Force:</span><b id="shake-force-x">0.00 m/s²</b>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                    <span>Y-Axis Force:</span><b id="shake-force-y">0.00 m/s²</b>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                    <span>Z-Axis Force:</span><b id="shake-force-z">9.80 m/s²</b>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="settings-btn-desc mb-15">If your device doesn't support accelerometer input (e.g. standard desktop browsers), you can manually dispatch the distress signal using the test button below.</p>
+                        <button id="btn-shake-emulate-card" class="cyber-btn btn-red font-orbitron w-100">🚨 SIMULATE SHAKE FORCE (TEST)</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN: THEME CUSTOMIZER -->
+        <section id="screen-theme-changing" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-purple">🎨 THEME CUSTOMIZER</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings">← BACK</button>
+                </div>
+                <div class="settings-layout">
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">AMOLED DISPLAY SYSTEM</h3>
+                        <p class="settings-btn-desc mb-15">Optimize power consumption on organic LED screens by swapping the dark navy gradients for a pure pitch-black workspace layout (#000000).</p>
+                        <div class="settings-btn-row border-top-thin">
+                            <div class="settings-btn-info">
+                                <span class="settings-btn-title">AMOLED PURE DARK MODE</span>
+                                <span class="settings-btn-desc">Switch background colors instantly.</span>
+                            </div>
+                            <button id="btn-toggle-amoled-card" class="settings-feature-btn">
+                                <span class="btn-status-dot"></span>
+                                <span class="btn-status-text">DISABLED</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-purple mb-10">NEON ACCENT HIGHLIGHTS</h3>
+                        <p class="settings-btn-desc mb-15">Choose the primary cybernetic tone for buttons, text glows, telemetry status indicators, and background grids.</p>
+                        <div class="settings-btn-row border-top-thin">
+                            <div class="settings-btn-info">
+                                <span class="settings-btn-title">SELECT ACTIVE TONE</span>
+                                <span class="settings-btn-desc">Choose from high-visibility colors.</span>
+                            </div>
+                            <div class="accent-color-selector">
+                                <button class="accent-dot dot-blue active" data-accent="accent-blue" title="Blue"></button>
+                                <button class="accent-dot dot-purple" data-accent="accent-purple" title="Purple"></button>
+                                <button class="accent-dot dot-green" data-accent="accent-green" title="Green"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN: HARDWARE TRIGGERS -->
+        <section id="screen-hardware-triggers" class="app-screen">
+            <div class="glass-card panel-container">
+                <div class="panel-header">
+                    <h2 class="orbitron-heading neon-text-blue">🔴 HARDWARE TRIGGERS</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings">← BACK</button>
+                </div>
+                <div class="settings-layout">
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-blue mb-10">KEYBOARD SHORTCUT DEPLOYMENT</h3>
+                        <p class="settings-btn-desc mb-15">When active, you can instantly broadcast emergency alerts by typing a discrete keyboard pattern. Useful for stealth panic actions when browser is in focus.</p>
+                        <div class="settings-btn-row border-top-thin">
+                            <div class="settings-btn-info">
+                                <span class="settings-btn-title">KEYBOARD SOS HOTKEY</span>
+                                <span class="settings-btn-desc">Press Shift + S + S rapidly to trigger.</span>
+                            </div>
+                            <button id="btn-toggle-hardware-card" class="settings-feature-btn active">
+                                <span class="btn-status-dot"></span>
+                                <span class="btn-status-text">ENABLED</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="settings-block glass-card">
+                        <h3 class="orbitron-heading font-small neon-text-purple mb-10">SHORTCUT SIGNALS</h3>
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">COMBINATION:</span>
+                                <div style="display: flex; gap: 5px;">
+                                    <kbd style="background: #FFFFFF; color: #000000; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-family: monospace;">Shift</kbd>
+                                    <span>+</span>
+                                    <kbd style="background: #FFFFFF; color: #000000; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-family: monospace;">S</kbd>
+                                    <span>+</span>
+                                    <kbd style="background: #FFFFFF; color: #000000; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-family: monospace;">S</kbd>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">CURRENT STATUS:</span>
+                                <span id="hardware-keyboard-status" class="neon-text-green" style="font-weight: bold;">MONITORING LIVE</span>
+                            </div>
+                        </div>
+                        <p class="settings-btn-desc mt-15">The keystroke sequence is analyzed locally and does not transmit typing patterns. Dispatched only upon valid trigger completion.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HIDDEN: Secret elements kept for JS compatibility -->
+        <div style="display:none !important;">
+            <button id="btn-panic-wipe"></button>
+            <button id="btn-fcm-register"></button>
+            <button id="btn-fcm-mock"></button>
+            <button id="btn-fcm-test-push"></button>
+            <button id="btn-refresh-inspector"></button>
+            <input id="fcm-sender-id" value="195352003055">
+            <input id="fcm-project-id" value="safewatch-4ff20">
+            <input id="fcm-vapid-key" value="BHTAcOIXuSQ_6lZuT7ydhKHECQXr9sd6VJOPFSHC2Dv3tS48gxcftOWMQnHY7SdwXKNVAquoj21kwylAow4Ivig">
+            <input id="fcm-api-key">
+            <input id="fcm-app-id">
+            <span id="fcm-token-status-badge">UNREGISTERED</span>
+            <span id="fcm-token-display">No active registration token.</span>
+            <pre id="raw-db-inspector"></pre>
+        </div>
 
         <!-- SCREEN 9: ADVANCED EMERGENCY FULLSCREEN SOS -->
         <section id="screen-sos-active" class="app-screen full-distress-cover">
@@ -571,9 +739,9 @@
                 <div class="distress-disarm-panel glass-card">
                     <h3 class="orbitron-heading font-small text-center mb-10">SAFEGATE PROTOCOL DISARM</h3>
                     <div class="form-group">
-                        <label for="sos-disarm-pin">OPERATOR SECURE PASSPHRASE PIN</label>
+                        <label for="sos-disarm-pin">OPERATOR SECURE PASSWORD</label>
                         <!-- CRITICAL UI RULE: White Background (#FFFFFF) + Black Text (#000000) -->
-                        <input type="password" id="sos-disarm-pin" class="critical-input text-center" placeholder="••••">
+                        <input type="password" id="sos-disarm-pin" class="critical-input text-center" placeholder="Enter Password">
                     </div>
                     <button id="btn-sos-disarm" class="cyber-btn btn-blue font-orbitron mt-10 w-100">DISARM DISTRESS PROTOCOLS</button>
                 </div>
@@ -831,23 +999,64 @@
             </div>
         </section>
 
-    </main>
+        <!-- SCREEN 15: VOICE NOTES RECORDER -->
+        <section id="screen-voice-notes" class="app-screen">
+            <div class="glass-card panel-container" style="max-width: 480px; margin: 0 auto;">
+                <div class="panel-header" style="justify-content: center; position: relative;">
+                    <h2 class="orbitron-heading neon-text-blue" style="font-size: 1.2rem;">🎙️ EVIDENCE VOICE RECORDER</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);">← BACK</button>
+                </div>
 
-    <!-- MAP OVERLAY MODAL -->
-    <div id="map-overlay-modal" class="map-overlay-modal-container">
-        <div class="glass-card map-card-modal">
-            <div class="modal-header">
-                <h3 class="app-title-text neon-text-blue font-small">LIVE GEOMETRIC TRACKING MAP</h3>
-                <div style="display: flex; gap: 10px;">
-                    <button id="btn-add-map-hazard" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow">REPORT LOCAL HAZARD</button>
-                    <button id="btn-close-map" class="cyber-btn-outline font-orbitron btn-small btn-red" onclick="document.getElementById('map-overlay-modal').classList.remove('active')">CLOSE</button>
+                <div class="settings-layout" style="grid-template-columns: 1fr; gap: 20px;">
+                    <!-- Recorder Card -->
+                    <div class="settings-block glass-card recorder-display-card">
+                        <div class="recorder-timer" id="voice-recorder-timer">00:00</div>
+                        <button class="record-mic-btn" id="btn-voice-record-toggle" title="Record Voice note">🎙️</button>
+                        <p class="settings-btn-desc text-center" id="voice-recorder-status" style="margin: 0;">Tap the microphone icon to initialize audio recording.</p>
+                    </div>
+
+                    <!-- Recordings List -->
+                    <div class="settings-block glass-card" style="padding: 20px;">
+                        <h3 class="orbitron-heading font-small neon-text-purple mb-10">SAVED VOICE RECORDINGS</h3>
+                        <div class="voice-clips-container" id="voice-notes-list-container">
+                            <div class="empty-state">No voice notes captured. Recording files are stored locally in the secure sandbox.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div id="live-gps-map"></div>
-        </div>
+        </section>
+
+        <!-- SCREEN 16: LIVE LOCATION TRACKING -->
+        <section id="screen-live-tracking" class="app-screen">
+            <div class="glass-card panel-container" style="max-width: 800px; margin: 0 auto; height: 85vh; display: flex; flex-direction: column;">
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 class="orbitron-heading neon-text-blue" style="font-size: 1.2rem;">🗺️ LIVE LOCATION TRACKING MAP</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-add-map-hazard" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow">REPORT HAZARD</button>
+                        <button class="cyber-btn-outline font-orbitron btn-small btn-back-hub">← BACK</button>
+                    </div>
+                </div>
+                <div id="live-gps-map" style="flex-grow: 1; border-radius: 20px; min-height: 400px; height: 100% !important; z-index: 1;"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Compatibility fallback for deleted modal overlay and settings references -->
+    <div id="map-overlay-modal" style="display: none !important;">
+        <button id="btn-close-map"></button>
+        <button id="btn-toggle-shake"></button>
+        <button id="btn-toggle-hardware"></button>
+        <button id="btn-toggle-lastbreath"></button>
+        <button id="btn-toggle-amoled"></button>
+        <select id="settings-fake-caller-id"><option value="Mom / Emergency Contact">Mom</option></select>
+        <select id="settings-fake-delay"><option value="0">0</option></select>
+        <button id="btn-settings-trigger-fake-call"></button>
+        <div id="btn-dashboard-profile"></div>
+        <button id="nav-btn-profile"></button>
     </div>
 
-    <!-- BOTTOM FLOATING NAVIGATION BAR -->
+    <!-- BOTTOM FLOATING NAVIGATION BAR (Only Home and Settings) -->
     <div id="app-bottom-nav" class="bottom-nav-container">
         <button id="nav-btn-home" class="nav-item active" onclick="showScreenFromNav('dashboard')">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
@@ -855,11 +1064,12 @@
             </svg>
             <span class="nav-label">Home</span>
         </button>
-        <button id="nav-btn-profile" class="nav-item" onclick="showScreenFromNav('profile')">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        <button id="nav-btn-settings" class="nav-item" onclick="showScreenFromNav('settings')">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
-            <span class="nav-label">Profile</span>
+            <span class="nav-label">Settings</span>
         </button>
     </div>
 
@@ -869,10 +1079,11 @@
                 'login', 'signup', 'verify', 'forgot', 'reset',
                 'dashboard', 'profile', 'safezone', 'history', 
                 'settings', 'sosActive', 'timer', 'circle', 
-                'fakecallConfig', 'fakecallActive', 'fakecallTalking'
+                'fakecallConfig', 'fakecallActive', 'fakecallTalking',
+                'last-breath', 'shake-trigger', 'theme-changing', 'hardware-triggers', 'voice-notes', 'live-tracking'
             ];
             screensList.forEach(key => {
-                const el = document.getElementById('screen-' + (key === 'sosActive' ? 'sos-active' : key === 'fakecallConfig' ? 'fake-call-config' : key === 'fakecallActive' ? 'fake-call-active' : key === 'fakecallTalking' ? 'fake-call-talking' : key));
+                const el = document.getElementById('screen-' + (key === 'sosActive' ? 'sos-active' : key === 'fakecallConfig' ? 'fake-call-config' : key === 'fakecallActive' ? 'fake-call-active' : key === 'fakecallTalking' ? 'fake-call-talking' : key === 'last-breath' ? 'last-breath' : key === 'shake-trigger' ? 'shake-trigger' : key === 'theme-changing' ? 'theme-changing' : key === 'hardware-triggers' ? 'hardware-triggers' : key === 'voice-notes' ? 'voice-notes' : key === 'live-tracking' ? 'live-tracking' : key));
                 if (el) {
                     if (key === screenKey) {
                         el.classList.add('active');
@@ -883,9 +1094,12 @@
             });
             
             document.getElementById('nav-btn-home').classList.toggle('active', screenKey === 'dashboard');
-            document.getElementById('nav-btn-profile').classList.toggle('active', screenKey === 'profile');
+            const profileNavBtn = document.getElementById('nav-btn-profile');
+            if (profileNavBtn) profileNavBtn.classList.toggle('active', screenKey === 'profile');
+            const settingsBtn = document.getElementById('nav-btn-settings');
+            if (settingsBtn) settingsBtn.classList.toggle('active', screenKey === 'settings');
             
-            if (screenKey === 'dashboard') {
+            if (screenKey === 'dashboard' || screenKey === 'live-tracking' || screenKey === 'live-location') {
                 setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);
             }
         }

@@ -70,9 +70,6 @@ body {
                 var(--bg-dark-navy);
     overflow-x: hidden;
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     transition: background 0.3s ease, color 0.3s ease;
 }
 
@@ -212,22 +209,42 @@ h3 { font-size: 20px; }
     transition: border 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
-/* Single Page App Layout */
+/* Single Page App Layout — Full Page Screens */
 #app-viewport {
     width: 100%;
-    max-width: 1200px;
     min-height: 100vh;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     position: relative;
 }
 
 .app-screen {
     display: none;
     width: 100%;
-    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    min-height: 100vh;
+    padding: 20px;
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-sizing: border-box;
+}
+
+/* Auth screens (login/signup) stay centered */
+#screen-login,
+#screen-signup,
+#screen-verify,
+#screen-forgot,
+#screen-reset {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#screen-login.active,
+#screen-signup.active,
+#screen-verify.active,
+#screen-forgot.active,
+#screen-reset.active {
+    display: flex;
 }
 
 .app-screen.active {
@@ -609,7 +626,7 @@ h3 { font-size: 20px; }
 
 /* Leaflet Dark Theme Overrides */
 .leaflet-container {
-    background-color: #0c0e18 !important;
+    background-color: #f4f4f4 !important;
 }
 
 /* SOS Card - Professional High-Priority Design */
@@ -871,7 +888,7 @@ h3 { font-size: 20px; }
    ========================================== */
 .panel-container {
     width: 100%;
-    max-width: 950px;
+    max-width: 1100px;
     margin: 0 auto;
     border-color: rgba(255, 255, 255, 0.1);
 }
@@ -2250,6 +2267,17 @@ input:focus, textarea:focus, select:focus {
     background: rgba(126, 139, 155, 0.08);
 }
 
+.color-purple {
+    color: #8B5CF6;
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.color-red {
+    color: #FF0000;
+    background: rgba(255, 0, 0, 0.08);
+}
+
+
 .tool-label-simple {
     font-size: 13px;
     font-weight: 500;
@@ -2358,12 +2386,401 @@ body:has(#screen-history.active) .bottom-nav-container,
 body:has(#screen-settings.active) .bottom-nav-container,
 body:has(#screen-timer.active) .bottom-nav-container,
 body:has(#screen-circle.active) .bottom-nav-container,
-body:has(#screen-fake-call-config.active) .bottom-nav-container {
+body:has(#screen-fake-call-config.active) .bottom-nav-container,
+body:has(#screen-last-breath.active) .bottom-nav-container,
+body:has(#screen-shake-trigger.active) .bottom-nav-container,
+body:has(#screen-theme-changing.active) .bottom-nav-container,
+body:has(#screen-hardware-triggers.active) .bottom-nav-container,
+body:has(#screen-voice-notes.active) .bottom-nav-container,
+body:has(#screen-live-tracking.active) .bottom-nav-container {
     display: flex;
 }
 
-.map-card-modal #live-gps-map {
+.map-card-modal #live-gps-map,
+#screen-live-tracking #live-gps-map {
     height: 100% !important;
     flex-grow: 1;
     min-height: 450px;
 }
+
+/* ==========================================
+   SETTINGS SCREEN — BUTTON ROW STYLES
+   ========================================== */
+
+.settings-btn-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.settings-btn-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-btn-title {
+    font-family: var(--font-headings);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-white);
+}
+
+.settings-btn-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* The ON/OFF feature toggle button */
+.settings-feature-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-headings);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.settings-feature-btn .btn-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+    flex-shrink: 0;
+}
+
+.settings-feature-btn.active {
+    border-color: #00FF41;
+    background: rgba(0, 255, 65, 0.1);
+    color: #00FF41;
+    box-shadow: 0 0 12px rgba(0, 255, 65, 0.2);
+}
+
+.settings-feature-btn.active .btn-status-dot {
+    background: #00FF41;
+    box-shadow: 0 0 8px #00FF41;
+}
+
+.settings-feature-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.2);
+}
+
+/* Legacy toggle-capsule — keep working for any remaining usages */
+.toggle-capsule {
+    width: 52px;
+    height: 28px;
+    border-radius: 14px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+}
+
+.toggle-capsule::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+}
+
+.toggle-capsule.active {
+    background: #00FF41;
+    box-shadow: 0 0 12px rgba(0, 255, 65, 0.4);
+}
+
+.toggle-capsule.active::after {
+    left: 28px;
+    background: #ffffff;
+}
+
+/* ==========================================================
+   SETTINGS LAYOUT & PROFILE REDESIGN (MATCHING SCREENSHOT)
+   ========================================================== */
+
+.settings-avatar-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 15px auto 25px auto;
+}
+
+.avatar-large-circle {
+    width: 100px;
+    height: 100px;
+    background: rgba(13, 20, 35, 0.6) !important;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    color: var(--accent-glow);
+    transition: all 0.3s ease;
+}
+
+.avatar-edit-badge {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 32px;
+    height: 32px;
+    background: #00F2FF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    border: 2px solid #0A0E1A;
+    font-size: 0.95rem;
+    color: #0A0E1A;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.avatar-edit-badge:hover {
+    transform: scale(1.1);
+    background-color: #00d4e0;
+}
+
+.settings-section-header {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    margin: 25px 0 12px 0 !important;
+    text-transform: none !important;
+    letter-spacing: 0.2px !important;
+}
+
+.text-neon-pink {
+    color: #BD00FF;
+    text-shadow: 0 0 10px rgba(189, 0, 255, 0.3);
+}
+
+.text-neon-cyan {
+    color: #00F2FF;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+.settings-rows-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-row-item {
+    background: rgba(13, 20, 35, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-radius: 16px !important;
+    padding: 16px 20px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.2s ease;
+}
+
+.settings-row-item:hover {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(13, 20, 35, 0.85) !important;
+    transform: translateY(-1px);
+}
+
+.settings-row-item:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.settings-row-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.settings-row-icon {
+    font-size: 20px;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-row-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.settings-row-chevron {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.settings-row-item:hover .settings-row-chevron {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.settings-logout-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255, 0, 0, 0.35) !important;
+    color: var(--alert-red);
+    border-radius: 16px !important;
+    padding: 16px !important;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    margin-top: 25px;
+    margin-bottom: 90px; /* spacing for floating navbar */
+    font-family: var(--font-headings);
+}
+
+.settings-logout-btn:hover {
+    background: rgba(255, 0, 0, 0.08);
+    border-color: var(--alert-red) !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+}
+
+.settings-logout-btn:active {
+    transform: scale(0.98);
+}
+
+/* ==========================================================
+   VOICE NOTES EVIDENCE RECORDER STYLE
+   ========================================================== */
+
+.recorder-display-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 30px 20px !important;
+    border-color: rgba(0, 242, 255, 0.15) !important;
+}
+
+.record-mic-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00F2FF, #0099cc);
+    border: 3px solid #FFFFFF;
+    color: #FFFFFF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3);
+    transition: all 0.25s ease;
+}
+
+.record-mic-btn.recording {
+    background: linear-gradient(135deg, #FF0000, #cc0000);
+    box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.8), 0 0 25px rgba(255, 0, 0, 0.6);
+    animation: pulseSOS 1.5s infinite;
+}
+
+.record-mic-btn:hover {
+    transform: scale(1.05);
+}
+
+.recorder-timer {
+    font-size: 26px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.voice-clips-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.voice-clip-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.voice-clip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.voice-clip-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+.voice-clip-time {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.voice-clip-audio {
+    width: 100%;
+    height: 32px;
+    outline: none;
+    border-radius: 8px;
+    background: transparent;
+}
+
+.voice-clip-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-delete-clip {
+    background: transparent;
+    border: none;
+    color: var(--alert-red);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-delete-clip:hover {
+    text-decoration: underline;
+}
+

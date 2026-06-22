@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let safeZoneCircle = null; // Leaflet circle geofence layer
 
     let currentCoords = { lat: 13.7563, lng: 100.5018 }; // Bangkok Default
+    let hasCenteredMap = false;
     let currentSpeed = 0.0;
     let batteryLevel = 100.0;
     let signalStrength = 92;
@@ -67,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Hardware and shake toggle states
     let isShakeTriggerActive = true;
     let isHardwareTriggerActive = true;
+    let isLastBreathActive = true;
 
     // Active Screen references
     const screens = {
@@ -85,7 +87,13 @@ document.addEventListener("DOMContentLoaded", () => {
         circle: document.getElementById("screen-circle"),
         fakecallConfig: document.getElementById("screen-fake-call-config"),
         fakecallActive: document.getElementById("screen-fake-call-active"),
-        fakecallTalking: document.getElementById("screen-fake-call-talking")
+        fakecallTalking: document.getElementById("screen-fake-call-talking"),
+        lastBreath: document.getElementById("screen-last-breath"),
+        shakeTrigger: document.getElementById("screen-shake-trigger"),
+        themeChanging: document.getElementById("screen-theme-changing"),
+        hardwareTriggers: document.getElementById("screen-hardware-triggers"),
+        voiceNotes: document.getElementById("screen-voice-notes"),
+        liveTracking: document.getElementById("screen-live-tracking")
     };
 
     // ------------------------------------------
@@ -101,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         // Map refresh fits
-        if (screenKey === "dashboard" && map) {
+        if ((screenKey === "dashboard" || screenKey === "liveTracking") && map) {
             setTimeout(() => {
                 map.invalidateSize();
             }, 150);
@@ -116,26 +124,285 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Secondary card clicks redirection
+    // Main dashboard safety features click handlers
+    document.getElementById("card-sos-alert").addEventListener("click", () => {
+        deployDistressScreen();
+        triggerSOSBroadcast();
+    });
+
+    document.getElementById("card-live-location").addEventListener("click", () => {
+        showScreen("liveTracking");
+    });
+
     document.getElementById("card-safety-timer").addEventListener("click", () => showScreen("timer"));
+
+    document.getElementById("card-voice-recorder").addEventListener("click", () => {
+        showScreen("voiceNotes");
+        renderVoiceClipsList();
+    });
+
     document.getElementById("card-emergency-circle").addEventListener("click", () => {
         showScreen("circle");
         syncContactsList();
     });
-    document.getElementById("card-fake-call").addEventListener("click", () => showScreen("fakecallConfig"));
-    document.getElementById("card-safezone-manager").addEventListener("click", () => {
-        showScreen("safezone");
-        syncSafeZoneUI();
-    });
+
     document.getElementById("card-travel-history").addEventListener("click", () => {
         showScreen("history");
         renderTravelTimeline();
     });
-    document.getElementById("card-master-settings").addEventListener("click", () => showScreen("settings"));
+
+    document.getElementById("card-fake-call").addEventListener("click", () => showScreen("fakecallConfig"));
+
+    // Compatibility listeners for hidden legacy cards to prevent crashes
+    const legacyCards = ["card-master-settings", "card-safezone-manager", "card-last-breath", "card-shake-trigger", "card-theme-changing", "card-hardware-triggers"];
+    legacyCards.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("click", () => {});
+    });
     
     // Header click redirections
     document.getElementById("btn-dashboard-profile").addEventListener("click", () => openProfileGateway());
     document.getElementById("profile-name").addEventListener("click", () => openProfileGateway());
+
+    // Back to master settings sub-screens navigation
+    document.querySelectorAll(".btn-back-settings").forEach(btn => {
+        btn.addEventListener("click", () => {
+            showScreen("settings");
+        });
+    });
+
+    // Bottom Navigation Bar Routing Elements
+    const navBtnHome = document.getElementById("nav-btn-home");
+    if (navBtnHome) navBtnHome.addEventListener("click", () => showScreen("dashboard"));
+
+    const navBtnProfile = document.getElementById("nav-btn-profile");
+    if (navBtnProfile) navBtnProfile.addEventListener("click", () => showScreen("profile"));
+
+    const navBtnSettings = document.getElementById("nav-btn-settings");
+    if (navBtnSettings) navBtnSettings.addEventListener("click", () => showScreen("settings"));
+
+    // Settings Screen Sub-Page buttons navigation
+    const settingsBtnProfile = document.getElementById("settings-btn-profile");
+    if (settingsBtnProfile) settingsBtnProfile.addEventListener("click", () => openProfileGateway());
+
+    const settingsBtnHardware = document.getElementById("settings-btn-hardware");
+    if (settingsBtnHardware) settingsBtnHardware.addEventListener("click", () => showScreen("hardwareTriggers"));
+
+    const settingsBtnLastBreath = document.getElementById("settings-btn-lastbreath");
+    if (settingsBtnLastBreath) settingsBtnLastBreath.addEventListener("click", () => showScreen("lastBreath"));
+
+    const settingsBtnShake = document.getElementById("settings-btn-shake");
+    if (settingsBtnShake) settingsBtnShake.addEventListener("click", () => showScreen("shakeTrigger"));
+
+    const settingsBtnThemes = document.getElementById("settings-btn-themes");
+    if (settingsBtnThemes) settingsBtnThemes.addEventListener("click", () => showScreen("themeChanging"));
+
+    const btnSettingsLogoutPage = document.getElementById("btn-settings-logout-page");
+    if (btnSettingsLogoutPage) {
+        btnSettingsLogoutPage.addEventListener("click", () => {
+            const origLogout = document.getElementById("btn-logout");
+            if (origLogout) origLogout.click();
+        });
+    }
+
+    // Redesigned Settings Screen Row Click Triggers (Compatibility check for settings rows)
+    const rowHardware = document.getElementById("row-settings-hardware");
+    if (rowHardware) rowHardware.addEventListener("click", () => showScreen("hardwareTriggers"));
+
+    const rowLastBreath = document.getElementById("row-settings-lastbreath");
+    if (rowLastBreath) rowLastBreath.addEventListener("click", () => showScreen("lastBreath"));
+
+    const rowSafeZone = document.getElementById("row-settings-safezone");
+    if (rowSafeZone) {
+        rowSafeZone.addEventListener("click", () => {
+            showScreen("safezone");
+            syncSafeZoneUI();
+        });
+    }
+
+    const rowHeatmap = document.getElementById("row-settings-heatmap");
+    if (rowHeatmap) {
+        rowHeatmap.addEventListener("click", () => {
+            const mapModal = document.getElementById("map-overlay-modal");
+            if (mapModal) {
+                mapModal.classList.add("active");
+                setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 200);
+            }
+        });
+    }
+
+    const rowContacts = document.getElementById("row-settings-contacts");
+    if (rowContacts) {
+        rowContacts.addEventListener("click", () => {
+            showScreen("circle");
+            syncContactsList();
+        });
+    }
+
+    const rowVoiceNotes = document.getElementById("row-settings-voicenotes");
+    if (rowVoiceNotes) {
+        rowVoiceNotes.addEventListener("click", () => {
+            showScreen("voiceNotes");
+            renderVoiceClipsList();
+        });
+    }
+
+    const rowApp = document.getElementById("row-settings-app");
+    if (rowApp) rowApp.addEventListener("click", () => showScreen("themeChanging"));
+
+    // Collapsible Profile details edit toggle trigger
+    const btnEditProfileTrigger = document.getElementById("btn-edit-profile-trigger");
+    const profileEditSection = document.getElementById("profile-edit-section");
+    if (btnEditProfileTrigger && profileEditSection) {
+        btnEditProfileTrigger.addEventListener("click", () => {
+            profileEditSection.classList.toggle("hidden");
+        });
+    }
+
+    // Redesigned settings logout button trigger
+    const btnSettingsLogout = document.getElementById("btn-settings-logout");
+    if (btnSettingsLogout) {
+        btnSettingsLogout.addEventListener("click", () => {
+            const origLogout = document.getElementById("btn-logout");
+            if (origLogout) {
+                origLogout.click();
+            }
+        });
+    }
+
+    // VOICE NOTES EVIDENCE RECORDER MODULE
+    let voiceRecorderStream = null;
+    let voiceRecorderMediaRecorder = null;
+    let voiceRecorderChunks = [];
+    let voiceRecorderTimerInterval = null;
+    let voiceRecorderSeconds = 0;
+    
+    const btnVoiceRecordToggle = document.getElementById("btn-voice-record-toggle");
+    const voiceRecorderTimer = document.getElementById("voice-recorder-timer");
+    const voiceRecorderStatus = document.getElementById("voice-recorder-status");
+    const voiceNotesListContainer = document.getElementById("voice-notes-list-container");
+
+    if (btnVoiceRecordToggle) {
+        btnVoiceRecordToggle.addEventListener("click", async () => {
+            if (voiceRecorderMediaRecorder && voiceRecorderMediaRecorder.state === "recording") {
+                // Stop recording
+                voiceRecorderMediaRecorder.stop();
+                if (voiceRecorderStream) {
+                    voiceRecorderStream.getTracks().forEach(track => track.stop());
+                }
+                btnVoiceRecordToggle.classList.remove("recording");
+                voiceRecorderStatus.textContent = "Recording stopped. Encoding clip...";
+                clearInterval(voiceRecorderTimerInterval);
+            } else {
+                // Start recording
+                try {
+                    voiceRecorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    voiceRecorderMediaRecorder = new MediaRecorder(voiceRecorderStream);
+                    voiceRecorderChunks = [];
+                    
+                    voiceRecorderMediaRecorder.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0) {
+                            voiceRecorderChunks.push(e.data);
+                        }
+                    };
+                    
+                    voiceRecorderMediaRecorder.onstop = () => {
+                        const blob = new Blob(voiceRecorderChunks, { type: 'audio/webm' });
+                        saveVoiceClip(blob, voiceRecorderSeconds);
+                    };
+                    
+                    voiceRecorderSeconds = 0;
+                    voiceRecorderTimer.textContent = "00:00";
+                    btnVoiceRecordToggle.classList.add("recording");
+                    voiceRecorderStatus.textContent = "Recording live telemetry audio...";
+                    
+                    voiceRecorderMediaRecorder.start();
+                    
+                    voiceRecorderTimerInterval = setInterval(() => {
+                        voiceRecorderSeconds++;
+                        const mins = Math.floor(voiceRecorderSeconds / 60);
+                        const secs = voiceRecorderSeconds % 60;
+                        voiceRecorderTimer.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    }, 1000);
+                } catch (err) {
+                    alert("Microphone Access Rejection: Cannot initialize audio hardware. " + err.message);
+                }
+            }
+        });
+    }
+
+    function saveVoiceClip(blob, durationSecs) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64data = e.target.result;
+            const clips = getSavedClips();
+            
+            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const clip = {
+                id: "clip_" + Date.now(),
+                timestamp: timestamp,
+                duration: durationSecs,
+                dataUrl: base64data
+            };
+            
+            clips.push(clip);
+            localStorage.setItem("safewatch_voice_notes", JSON.stringify(clips));
+            renderVoiceClipsList();
+            voiceRecorderStatus.textContent = "Voice note evidence captured successfully.";
+        };
+        reader.readAsDataURL(blob);
+    }
+
+    function getSavedClips() {
+        const saved = localStorage.getItem("safewatch_voice_notes");
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    function renderVoiceClipsList() {
+        if (!voiceNotesListContainer) return;
+        voiceNotesListContainer.innerHTML = "";
+        
+        const clips = getSavedClips();
+        if (clips.length === 0) {
+            voiceNotesListContainer.innerHTML = `<div class="empty-state">No voice notes captured. Recording files are stored locally in the secure sandbox.</div>`;
+            return;
+        }
+        
+        clips.slice().reverse().forEach(clip => {
+            const item = document.createElement("div");
+            item.className = "voice-clip-item";
+            
+            const mins = Math.floor(clip.duration / 60);
+            const secs = clip.duration % 60;
+            const durationStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            item.innerHTML = `
+                <div class="voice-clip-header">
+                    <span class="voice-clip-title">📁 EVIDENCE_CLIP_${clip.id.substring(5, 11)}</span>
+                    <span class="voice-clip-time">${clip.timestamp} (${durationStr})</span>
+                </div>
+                <audio class="voice-clip-audio" controls src="${clip.dataUrl}"></audio>
+                <div class="voice-clip-actions" style="margin-top: 5px;">
+                    <button class="btn-delete-clip" data-id="${clip.id}">Delete</button>
+                </div>
+            `;
+            
+            const delBtn = item.querySelector(".btn-delete-clip");
+            delBtn.addEventListener("click", () => {
+                if (confirm("Delete this audio evidence permanent?")) {
+                    deleteVoiceClip(clip.id);
+                }
+            });
+            
+            voiceNotesListContainer.appendChild(item);
+        });
+    }
+
+    function deleteVoiceClip(id) {
+        const clips = getSavedClips().filter(c => c.id !== id);
+        localStorage.setItem("safewatch_voice_notes", JSON.stringify(clips));
+        renderVoiceClipsList();
+    }
 
     // ------------------------------------------
     // THEMES & ACCENTS PERSONALIZATION CONTROLS
@@ -143,35 +410,85 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnToggleAmoled = document.getElementById("btn-toggle-amoled");
     const btnToggleShake = document.getElementById("btn-toggle-shake");
     const btnToggleHardware = document.getElementById("btn-toggle-hardware");
-    
+    const btnToggleLastBreath = document.getElementById("btn-toggle-lastbreath");
+
+    // Helper: update settings-feature-btn text based on active state
+    function updateFeatureBtnText(btn, isActive) {
+        const textSpan = btn.querySelector(".btn-status-text");
+        if (textSpan) textSpan.textContent = isActive ? "ENABLED" : "DISABLED";
+    }
+
+    function syncButtonState(btnId1, btnId2, isActive) {
+        [btnId1, btnId2].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.classList.toggle("active", isActive);
+                updateFeatureBtnText(btn, isActive);
+            }
+        });
+    }
+
     // AMOLED Absolute Dark Toggle
-    btnToggleAmoled.addEventListener("click", () => {
+    const toggleAmoled = () => {
         const isAmoled = document.body.classList.toggle("amoled-mode");
-        btnToggleAmoled.classList.toggle("active", isAmoled);
+        syncButtonState("btn-toggle-amoled", "btn-toggle-amoled-card", isAmoled);
         sessionStorage.setItem("amoled", isAmoled ? "true" : "false");
         persistSettings({ amoled_mode: isAmoled });
-    });
+    };
+    if (btnToggleAmoled) btnToggleAmoled.addEventListener("click", toggleAmoled);
+    const btnToggleAmoledCard = document.getElementById("btn-toggle-amoled-card");
+    if (btnToggleAmoledCard) btnToggleAmoledCard.addEventListener("click", toggleAmoled);
 
-    // Toggle Toggles
-    btnToggleShake.addEventListener("click", () => {
+    // Toggle Shake
+    const toggleShake = () => {
         isShakeTriggerActive = !isShakeTriggerActive;
-        btnToggleShake.classList.toggle("active", isShakeTriggerActive);
+        syncButtonState("btn-toggle-shake", "btn-toggle-shake-card", isShakeTriggerActive);
         persistSettings({ shake_to_alert: isShakeTriggerActive });
-    });
+    };
+    if (btnToggleShake) btnToggleShake.addEventListener("click", toggleShake);
+    const btnToggleShakeCard = document.getElementById("btn-toggle-shake-card");
+    if (btnToggleShakeCard) btnToggleShakeCard.addEventListener("click", toggleShake);
 
-    btnToggleHardware.addEventListener("click", () => {
+    // Toggle Hardware
+    const toggleHardware = () => {
         isHardwareTriggerActive = !isHardwareTriggerActive;
-        btnToggleHardware.classList.toggle("active", isHardwareTriggerActive);
+        syncButtonState("btn-toggle-hardware", "btn-toggle-hardware-card", isHardwareTriggerActive);
+        
+        const statusLbl = document.getElementById("hardware-keyboard-status");
+        if (statusLbl) {
+            statusLbl.textContent = isHardwareTriggerActive ? "MONITORING LIVE" : "DISABLED";
+            statusLbl.className = isHardwareTriggerActive ? "neon-text-green" : "text-muted";
+        }
+        
         persistSettings({ hardware_trigger: isHardwareTriggerActive });
-    });
+    };
+    if (btnToggleHardware) btnToggleHardware.addEventListener("click", toggleHardware);
+    const btnToggleHardwareCard = document.getElementById("btn-toggle-hardware-card");
+    if (btnToggleHardwareCard) btnToggleHardwareCard.addEventListener("click", toggleHardware);
+
+    // Toggle Last Breath
+    const toggleLastBreath = () => {
+        isLastBreathActive = !isLastBreathActive;
+        syncButtonState("btn-toggle-lastbreath", "btn-toggle-lastbreath-card", isLastBreathActive);
+        persistSettings({ last_breath: isLastBreathActive });
+    };
+    if (btnToggleLastBreath) btnToggleLastBreath.addEventListener("click", toggleLastBreath);
+    const btnToggleLastBreathCard = document.getElementById("btn-toggle-lastbreath-card");
+    if (btnToggleLastBreathCard) btnToggleLastBreathCard.addEventListener("click", toggleLastBreath);
 
     // Accents Color dots selection
     document.querySelectorAll(".accent-dot").forEach(dot => {
         dot.addEventListener("click", () => {
-            document.querySelectorAll(".accent-dot").forEach(d => d.classList.remove("active"));
-            dot.classList.add("active");
-            
             const accent = dot.getAttribute("data-accent");
+            
+            document.querySelectorAll(".accent-dot").forEach(d => {
+                if (d.getAttribute("data-accent") === accent) {
+                    d.classList.add("active");
+                } else {
+                    d.classList.remove("active");
+                }
+            });
+            
             document.body.className = `${accent} ${document.body.classList.contains("amoled-mode") ? "amoled-mode" : ""}`;
             sessionStorage.setItem("accent", accent);
             persistSettings({ accent_color: accent });
@@ -193,10 +510,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Load theme state from storage
     function loadThemePreferences() {
         const amoled = sessionStorage.getItem("amoled");
-        if (amoled === "true") {
-            document.body.classList.add("amoled-mode");
-            btnToggleAmoled.classList.add("active");
-        }
+        const isAmoled = amoled === "true";
+        syncButtonState("btn-toggle-amoled", "btn-toggle-amoled-card", isAmoled);
+        document.body.classList.toggle("amoled-mode", isAmoled);
         
         const accent = sessionStorage.getItem("accent") || "accent-blue";
         document.body.classList.remove("accent-blue", "accent-purple", "accent-green");
@@ -209,6 +525,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 dot.classList.remove("active");
             }
         });
+    }
+
+    function syncSettingsUIWithUser(user) {
+        if (!user) return;
+        
+        isShakeTriggerActive = user.settings_shake_to_alert !== false;
+        isHardwareTriggerActive = user.settings_hardware_trigger !== false;
+        isLastBreathActive = user.settings_last_breath !== false;
+        
+        syncButtonState("btn-toggle-shake", "btn-toggle-shake-card", isShakeTriggerActive);
+        syncButtonState("btn-toggle-hardware", "btn-toggle-hardware-card", isHardwareTriggerActive);
+        syncButtonState("btn-toggle-lastbreath", "btn-toggle-lastbreath-card", isLastBreathActive);
+        
+        const isAmoled = user.settings_amoled_mode === true;
+        syncButtonState("btn-toggle-amoled", "btn-toggle-amoled-card", isAmoled);
+        document.body.classList.toggle("amoled-mode", isAmoled);
+        sessionStorage.setItem("amoled", isAmoled ? "true" : "false");
+        
+        const accent = user.settings_accent_color || "accent-blue";
+        document.body.className = `${accent} ${isAmoled ? "amoled-mode" : ""}`;
+        sessionStorage.setItem("accent", accent);
+        
+        document.querySelectorAll(".accent-dot").forEach(dot => {
+            if (dot.getAttribute("data-accent") === accent) {
+                dot.classList.add("active");
+            } else {
+                dot.classList.remove("active");
+            }
+        });
+        
+        const statusLbl = document.getElementById("hardware-keyboard-status");
+        if (statusLbl) {
+            statusLbl.textContent = isHardwareTriggerActive ? "MONITORING LIVE" : "DISABLED";
+            statusLbl.className = isHardwareTriggerActive ? "neon-text-green" : "text-muted";
+        }
+
+        // Sync profile avatar display emoji
+        const avatarDisp = document.getElementById("profile-avatar-display");
+        const avatarMap = { "avatar-shield": "🛡️", "avatar-eye": "👁️", "avatar-falcon": "🦅", "avatar-ghost": "👻" };
+        if (avatarDisp && user) {
+            avatarDisp.textContent = avatarMap[user.avatar] || "👤";
+        }
     }
 
     // ------------------------------------------
@@ -265,13 +623,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateBatteryState(level) {
         batteryLevel = parseFloat(level.toFixed(1));
-        document.getElementById("tel-battery").textContent = batteryLevel;
-        document.getElementById("bar-battery").style.width = `${batteryLevel}%`;
+        const batteryValEl = document.getElementById("tel-battery");
+        if (batteryValEl) batteryValEl.textContent = batteryLevel;
+        const batteryBarEl = document.getElementById("bar-battery");
+        if (batteryBarEl) batteryBarEl.style.width = `${batteryLevel}%`;
+        
+        // Update Last Breath screen battery indicators
+        const lbValEl = document.getElementById("lastbreath-battery-val");
+        if (lbValEl) lbValEl.textContent = batteryLevel;
+        const lbBarEl = document.getElementById("lastbreath-battery-bar");
+        if (lbBarEl) {
+            lbBarEl.style.width = `${batteryLevel}%`;
+            lbBarEl.className = "telemetry-bar-fill " + (batteryLevel < 15 ? "btn-red" : (batteryLevel < 35 ? "btn-purple" : "green-bg"));
+        }
     }
 
     function startSimulatedWalker() {
-        // Fallback default coordinate centers
-        currentCoords = { lat: 13.7563, lng: 100.5018 };
+        // Fallback default coordinate centers - fetch approximate location by IP if coords are still Bangkok
+        if (currentCoords.lat === 13.7563 && currentCoords.lng === 100.5018) {
+            fetch("https://ipapi.co/json/")
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.latitude && data.longitude) {
+                        currentCoords.lat = data.latitude;
+                        currentCoords.lng = data.longitude;
+                        updateUIWithTelemetry();
+                        if (map) {
+                            map.setView([currentCoords.lat, currentCoords.lng], 15);
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.warn("IP geolocation fallback failed, keeping default coordinates:", err);
+                });
+        }
+        
         updateUIWithTelemetry();
         
         setInterval(() => {
@@ -293,6 +679,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (map && userMarker) {
             userMarker.setLatLng([currentCoords.lat, currentCoords.lng]);
+            if (!hasCenteredMap) {
+                map.setView([currentCoords.lat, currentCoords.lng], 15);
+                hasCenteredMap = true;
+            }
         }
     }
 
@@ -344,10 +734,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function initMap() {
         map = L.map("live-gps-map", { zoomControl: false }).setView([currentCoords.lat, currentCoords.lng], 15);
         
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-            attribution: '&copy; CartoDB',
-            subdomains: 'abcd',
-            maxZoom: 20
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
         }).addTo(map);
 
         // Core green radar divicon pin for operator
@@ -489,7 +878,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 initMap();
                 initTelemetry();
-                loadThemePreferences();
+                syncSettingsUIWithUser(currentUser);
                 syncContactsList();
                 syncSafeZoneUI();
                 renderTravelTimeline();
@@ -534,7 +923,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("profile-name").textContent = `OPERATOR: ${currentUser.name.toUpperCase()}`;
                 initMap();
                 initTelemetry();
-                loadThemePreferences();
+                syncSettingsUIWithUser(currentUser);
                 syncContactsList();
                 syncSafeZoneUI();
                 renderTravelTimeline();
@@ -681,8 +1070,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 sessionStorage.setItem("user", JSON.stringify(currentUser));
                 document.getElementById("profile-name").textContent = `OPERATOR: ${currentUser.name.toUpperCase()}`;
                 highlightActiveAvatar(currentUser.avatar);
+                syncSettingsUIWithUser(currentUser);
                 alert("Operational profile sync saved.");
-                showScreen("dashboard");
+                
+                // Collapse edit form and stay on settings screen
+                const editSec = document.getElementById("profile-edit-section");
+                if (editSec) editSec.classList.add("hidden");
+                showScreen("profile");
             } else {
                 alert("Failed to sync profile telemetry data.");
             }
@@ -888,11 +1282,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Accelerometer simulated shake dispatch button
     const shakeBtn = document.getElementById("btn-shake-emulate");
-    shakeBtn.addEventListener("click", () => {
+    const triggerShakeSOS = () => {
         if (!isShakeTriggerActive) return;
         deployDistressScreen();
         triggerSOSBroadcast();
-    });
+    };
+    if (shakeBtn) shakeBtn.addEventListener("click", triggerShakeSOS);
+    const shakeBtnCard = document.getElementById("btn-shake-emulate-card");
+    if (shakeBtnCard) shakeBtnCard.addEventListener("click", triggerShakeSOS);
 
     // Mobile Motion Sensor Shake Hooks
     if (window.DeviceMotionEvent) {
@@ -909,6 +1306,14 @@ document.addEventListener("DOMContentLoaded", () => {
             let deltaY = Math.abs(acc.y - lastY);
             let deltaZ = Math.abs(acc.z - lastZ);
             
+            // Update UI elements in new Shake Screen
+            const fxEl = document.getElementById("shake-force-x");
+            const fyEl = document.getElementById("shake-force-y");
+            const fzEl = document.getElementById("shake-force-z");
+            if (fxEl) fxEl.textContent = `${acc.x.toFixed(2)} m/s²`;
+            if (fyEl) fyEl.textContent = `${acc.y.toFixed(2)} m/s²`;
+            if (fzEl) fzEl.textContent = `${acc.z.toFixed(2)} m/s²`;
+            
             if ((deltaX + deltaY + deltaZ) > 30) { // Shake sensitivity limit
                 moveCounter++;
                 if (moveCounter > 5) { // continuous motions
@@ -923,6 +1328,33 @@ document.addEventListener("DOMContentLoaded", () => {
             lastX = acc.x;
             lastY = acc.y;
             lastZ = acc.z;
+        });
+    }
+
+    // Small desktop motion feedback simulation
+    setInterval(() => {
+        const shakeScreen = document.getElementById("screen-shake-trigger");
+        if (shakeScreen && shakeScreen.classList.contains("active")) {
+            const fxEl = document.getElementById("shake-force-x");
+            if (fxEl && fxEl.textContent === "0.00 m/s²") {
+                const fyEl = document.getElementById("shake-force-y");
+                const fzEl = document.getElementById("shake-force-z");
+                const rx = (Math.random() * 0.4 - 0.2).toFixed(2);
+                const ry = (Math.random() * 0.4 - 0.2).toFixed(2);
+                const rz = (9.8 + Math.random() * 0.4 - 0.2).toFixed(2);
+                if (fxEl) fxEl.textContent = `${rx} m/s²`;
+                if (fyEl) fyEl.textContent = `${ry} m/s²`;
+                if (fzEl) fzEl.textContent = `${rz} m/s²`;
+            }
+        }
+    }, 500);
+
+    // Simulate low battery button on Last Breath Screen
+    const btnSimulateLowBattery = document.getElementById("btn-simulate-low-battery");
+    if (btnSimulateLowBattery) {
+        btnSimulateLowBattery.addEventListener("click", () => {
+            updateBatteryState(4.0);
+            syncTelemetryAndLogs();
         });
     }
 
@@ -1154,15 +1586,17 @@ document.addEventListener("DOMContentLoaded", () => {
         rawInspectorBox.textContent = "Loading live telemetry...";
 
         try {
-            const [contactsRes, historyRes, sosRes] = await Promise.all([
+            const [contactsRes, historyRes, sosRes, smsLogsRes] = await Promise.all([
                 fetch("/api/fetch-contacts", { headers: { "Authorization": `Bearer ${authToken}` } }),
                 fetch("/api/location-history", { headers: { "Authorization": `Bearer ${authToken}` } }),
-                fetch("/api/sos-history", { headers: { "Authorization": `Bearer ${authToken}` } })
+                fetch("/api/sos-history", { headers: { "Authorization": `Bearer ${authToken}` } }),
+                fetch("/api/sms-logs", { headers: { "Authorization": `Bearer ${authToken}` } })
             ]);
 
             const contacts = await contactsRes.json();
             const history = await historyRes.json();
             const sos = await sosRes.json();
+            const smsLogs = await smsLogsRes.json();
 
             const report = {
                 operator: currentUser ? { name: currentUser.name, email: currentUser.email, blood_group: currentUser.blood_group } : null,
@@ -1175,6 +1609,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 latest_location: (history.location_history || [])[0] || null,
                 sos_events: (sos.sos_history || []).length,
                 latest_sos: (sos.sos_history || [])[0] || null,
+                sms_logs: smsLogs.sms_logs || [],
                 current_telemetry: {
                     lat: currentCoords.lat.toFixed(6),
                     lng: currentCoords.lng.toFixed(6),
@@ -1207,12 +1642,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputSosDisarm = document.getElementById("sos-disarm-pin");
     const btnSosDisarm = document.getElementById("btn-sos-disarm");
 
-    btnSosDisarm.addEventListener("click", () => {
-        const pin = inputSosDisarm.value;
-        if (pin === "1234" || pin.length > 2) {
-            cancelDistressSOS();
-        } else {
-            alert("Disarm security gate validation failure.");
+    btnSosDisarm.addEventListener("click", async () => {
+        const password = inputSosDisarm.value;
+        if (!password) {
+            alert("Disarm security gate validation failure: Password is required.");
+            beep(300, 0.4);
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/auth/verify-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ password })
+            });
+
+            if (response.ok) {
+                cancelDistressSOS();
+            } else {
+                alert("Disarm security gate validation failure: Incorrect password.");
+                beep(300, 0.4);
+            }
+        } catch (e) {
+            alert("Connection error during disarm validation: " + e.message);
             beep(300, 0.4);
         }
     });
@@ -1689,8 +2144,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // FAKE CALL TELEPHONE SIMULATIONS
     // ------------------------------------------
     const triggerCallBtn = document.getElementById("btn-trigger-fake-call");
+    const triggerCallBtnSettings = document.getElementById("btn-settings-trigger-fake-call");
     const fakeCallerIdSelect = document.getElementById("fake-caller-id");
+    const fakeCallerIdSelectSettings = document.getElementById("settings-fake-caller-id");
     const fakeDelaySelect = document.getElementById("fake-delay");
+    const fakeDelaySelectSettings = document.getElementById("settings-fake-delay");
 
     const activeDeclineBtn = document.getElementById("btn-fake-decline");
     const activeAnswerBtn = document.getElementById("btn-fake-answer");
@@ -1700,7 +2158,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const labelOngoingName = document.getElementById("ongoing-caller-title");
     const labelTalkingTimer = document.getElementById("call-talking-timer");
 
-    triggerCallBtn.addEventListener("click", () => {
+    function syncFakeCallValues(source) {
+        if (source === 'main') {
+            if (fakeCallerIdSelectSettings && fakeCallerIdSelect) fakeCallerIdSelectSettings.value = fakeCallerIdSelect.value;
+            if (fakeDelaySelectSettings && fakeDelaySelect) fakeDelaySelectSettings.value = fakeDelaySelect.value;
+        } else {
+            if (fakeCallerIdSelect && fakeCallerIdSelectSettings) fakeCallerIdSelect.value = fakeCallerIdSelectSettings.value;
+            if (fakeDelaySelect && fakeDelaySelectSettings) fakeDelaySelect.value = fakeDelaySelectSettings.value;
+        }
+    }
+
+    if (fakeCallerIdSelect && fakeCallerIdSelectSettings) {
+        fakeCallerIdSelect.addEventListener("change", () => syncFakeCallValues('main'));
+        fakeCallerIdSelectSettings.addEventListener("change", () => syncFakeCallValues('settings'));
+    }
+    if (fakeDelaySelect && fakeDelaySelectSettings) {
+        fakeDelaySelect.addEventListener("change", () => syncFakeCallValues('main'));
+        fakeDelaySelectSettings.addEventListener("change", () => syncFakeCallValues('settings'));
+    }
+
+    const startCallSimulation = () => {
         const callerName = fakeCallerIdSelect.value;
         const delaySeconds = parseInt(fakeDelaySelect.value);
 
@@ -1712,7 +2189,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (fakeCallTimeoutId) clearTimeout(fakeCallTimeoutId);
         fakeCallTimeoutId = setTimeout(deployFakeCallScreen, delaySeconds * 1000);
-    });
+    };
+
+    if (triggerCallBtn) triggerCallBtn.addEventListener("click", startCallSimulation);
+    if (triggerCallBtnSettings) triggerCallBtnSettings.addEventListener("click", startCallSimulation);
 
     function deployFakeCallScreen() {
         showScreen("fakecallActive");

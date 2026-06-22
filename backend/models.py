@@ -64,6 +64,8 @@ class User(Base):
     # Settings
     settings_shake_to_alert = Column(Boolean, default=True)
     settings_hardware_trigger = Column(Boolean, default=True)
+    settings_last_breath = Column(Boolean, default=True)
+    settings_location_history = Column(Boolean, default=True)
     settings_amoled_mode = Column(Boolean, default=False)
     settings_accent_color = Column(String(50), default="neon-blue")
     
@@ -80,6 +82,7 @@ class User(Base):
     hazard_reports = relationship("HazardReport", back_populates="user", cascade="all, delete-orphan")
     sos_events = relationship("SOSEvent", back_populates="user", cascade="all, delete-orphan")
     emergency_circle = relationship("EmergencyCircle", back_populates="user", foreign_keys="EmergencyCircle.user_id")
+    user_activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
 
 # ==========================================
 # LOCATION TRACKING
@@ -216,3 +219,41 @@ class SOSEvent(Base):
     
     # Relationship
     user = relationship("User", back_populates="sos_events")
+
+
+# ==========================================
+# SMS TRANSMISSION LOGS
+# ==========================================
+
+class SMSLog(Base):
+    __tablename__ = "sms_logs"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    recipient_name = Column(String(255), nullable=False)
+    recipient_phone = Column(String(50), nullable=False)
+    message_body = Column(Text, nullable=False)
+    status = Column(String(50), default="pending")  # sent, failed, mock_sent
+    error_message = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationship
+    user = relationship("User")
+
+
+# ==========================================
+# USER ACTIVITIES
+# ==========================================
+
+class UserActivity(Base):
+    __tablename__ = "user_activities"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    activity_type = Column(String(100), nullable=False)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationship
+    user = relationship("User", back_populates="user_activities")
