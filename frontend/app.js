@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
         reset: document.getElementById("screen-reset"),
         dashboard: document.getElementById("screen-dashboard"),
         profile: document.getElementById("screen-profile"),
+        identity: document.getElementById("screen-identity"),
         safezone: document.getElementById("screen-safezone"),
         history: document.getElementById("screen-history"),
         settings: document.getElementById("screen-settings"),
@@ -100,6 +101,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // SPA SCREEN ROUTER
     // ------------------------------------------
     function showScreen(screenKey) {
+        if (screenKey === "profile" && currentUser) {
+            document.getElementById("profile-name-input").value = currentUser.name || "";
+            document.getElementById("profile-phone-input").value = currentUser.emergency_phone || "";
+            document.getElementById("profile-email-input").value = currentUser.email || "";
+            const emailDisp = document.getElementById("profile-email-display");
+            if (emailDisp) emailDisp.value = currentUser.email || "";
+            document.getElementById("profile-blood-input").value = currentUser.blood_group || "O+";
+            document.getElementById("profile-address-input").value = currentUser.address || "";
+            
+            selectedAvatar = currentUser.avatar || "";
+            highlightActiveAvatar(selectedAvatar);
+        } else if (screenKey === "identity" && currentUser) {
+            document.getElementById("identity-email-input").value = currentUser.email || "";
+            document.getElementById("identity-phone-input").value = currentUser.phone || "";
+            document.getElementById("identity-password-input").value = "";
+        }
+
         Object.keys(screens).forEach(key => {
             if (key === screenKey) {
                 screens[key].classList.add("active");
@@ -107,6 +125,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 screens[key].classList.remove("active");
             }
         });
+
+        // Update bottom nav active state
+        const navHome = document.getElementById('nav-btn-home');
+        const navProfile = document.getElementById('nav-btn-profile');
+        const navSettings = document.getElementById('nav-btn-settings');
+        if (navHome) navHome.classList.toggle('active', screenKey === 'dashboard');
+        if (navProfile) navProfile.classList.toggle('active', screenKey === 'profile');
+        if (navSettings) navSettings.classList.toggle('active', screenKey === 'settings');
 
         // Map refresh fits
         if ((screenKey === "dashboard" || screenKey === "liveTracking") && map) {
@@ -176,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (navBtnHome) navBtnHome.addEventListener("click", () => showScreen("dashboard"));
 
     const navBtnProfile = document.getElementById("nav-btn-profile");
-    if (navBtnProfile) navBtnProfile.addEventListener("click", () => showScreen("profile"));
+    if (navBtnProfile) navBtnProfile.addEventListener("click", () => openProfileGateway());
 
     const navBtnSettings = document.getElementById("nav-btn-settings");
     if (navBtnSettings) navBtnSettings.addEventListener("click", () => showScreen("settings"));
@@ -184,6 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Settings Screen Sub-Page buttons navigation
     const settingsBtnProfile = document.getElementById("settings-btn-profile");
     if (settingsBtnProfile) settingsBtnProfile.addEventListener("click", () => openProfileGateway());
+
+    const settingsBtnIdentity = document.getElementById("settings-btn-identity");
+    if (settingsBtnIdentity) settingsBtnIdentity.addEventListener("click", () => openIdentityGateway());
 
     const settingsBtnHardware = document.getElementById("settings-btn-hardware");
     if (settingsBtnHardware) settingsBtnHardware.addEventListener("click", () => showScreen("hardwareTriggers"));
@@ -561,11 +590,10 @@ document.addEventListener("DOMContentLoaded", () => {
             statusLbl.className = isHardwareTriggerActive ? "neon-text-green" : "text-muted";
         }
 
-        // Sync profile avatar display emoji
-        const avatarDisp = document.getElementById("profile-avatar-display");
-        const avatarMap = { "avatar-shield": "🛡️", "avatar-eye": "👁️", "avatar-falcon": "🦅", "avatar-ghost": "👻" };
-        if (avatarDisp && user) {
-            avatarDisp.textContent = avatarMap[user.avatar] || "👤";
+        // Sync profile avatar display
+        if (user) {
+            renderAvatar("profile-avatar-display", user.avatar);
+            renderAvatar("btn-dashboard-profile", user.avatar);
         }
     }
 
@@ -604,17 +632,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 (pos) => {
                     currentCoords.lat = pos.coords.latitude;
                     currentCoords.lng = pos.coords.longitude;
-                    currentSpeed = pos.coords.speed !== null ? (pos.coords.speed * 3.6) : (Math.random() * 5.2);
+                    currentSpeed = pos.coords.speed !== null ? (pos.coords.speed * 3.6) : 0.0;
                     updateUIWithTelemetry();
                 },
                 (err) => {
-                    console.warn("Static location watch. Emulating walking simulation vector.");
-                    startSimulatedWalker();
+                    console.warn("High accuracy geolocation failed/timeout. Trying low accuracy.");
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            currentCoords.lat = pos.coords.latitude;
+                            currentCoords.lng = pos.coords.longitude;
+                            currentSpeed = pos.coords.speed !== null ? (pos.coords.speed * 3.6) : 0.0;
+                            updateUIWithTelemetry();
+                        },
+                        (err2) => {
+                            console.warn("Low accuracy geolocation failed too. Using IP fallback.");
+                            fallbackToIPLocation();
+                        },
+                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                    );
                 },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         } else {
-            startSimulatedWalker();
+            fallbackToIPLocation();
         }
 
         // Sync loops: coordinate transmission + hazard pings + peer pings every 5 seconds
@@ -638,38 +678,59 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function startSimulatedWalker() {
-        // Fallback default coordinate centers - fetch approximate location by IP if coords are still Bangkok
-        if (currentCoords.lat === 13.7563 && currentCoords.lng === 100.5018) {
-            fetch("https://ipapi.co/json/")
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.latitude && data.longitude) {
-                        currentCoords.lat = data.latitude;
-                        currentCoords.lng = data.longitude;
-                        updateUIWithTelemetry();
-                        if (map) {
-                            map.setView([currentCoords.lat, currentCoords.lng], 15);
+    function fallbackToIPLocation() {
+        // Try freeipapi.com first (reliable, free, HTTPS-compatible)
+        fetch("https://freeipapi.com/api/json")
+            .then(res => {
+                if (!res.ok) throw new Error("freeipapi failed");
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.latitude && data.longitude) {
+                    setStaticCoords(data.latitude, data.longitude);
+                } else {
+                    throw new Error("Invalid freeipapi data");
+                }
+            })
+            .catch(err => {
+                console.warn("freeipapi.com failed, trying ipapi.co...", err);
+                fetch("https://ipapi.co/json/")
+                    .then(res => {
+                        if (!res.ok) throw new Error("ipapi failed");
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data && data.latitude && data.longitude) {
+                            setStaticCoords(data.latitude, data.longitude);
+                        } else {
+                            throw new Error("Invalid ipapi data");
                         }
-                    }
-                })
-                .catch(err => {
-                    console.warn("IP geolocation fallback failed, keeping default coordinates:", err);
-                });
-        }
-        
+                    })
+                    .catch(err2 => {
+                        console.warn("ipapi.co failed, trying ipinfo.io...", err2);
+                        fetch("https://ipinfo.io/json")
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data && data.loc) {
+                                    const [lat, lng] = data.loc.split(",").map(Number);
+                                    setStaticCoords(lat, lng);
+                                }
+                            })
+                            .catch(err3 => {
+                                console.warn("All IP fallbacks failed. Keeping default coords.", err3);
+                            });
+                    });
+            });
+    }
+
+    function setStaticCoords(lat, lng) {
+        currentCoords.lat = lat;
+        currentCoords.lng = lng;
+        currentSpeed = 0.0;
         updateUIWithTelemetry();
-        
-        setInterval(() => {
-            // Emulate coordinate footsteps
-            const deltaLat = (Math.random() - 0.5) * 0.00018;
-            const deltaLng = (Math.random() - 0.5) * 0.00018;
-            currentCoords.lat += deltaLat;
-            currentCoords.lng += deltaLng;
-            
-            currentSpeed = parseFloat((3.4 + Math.random() * 2.2).toFixed(1));
-            updateUIWithTelemetry();
-        }, 2000);
+        if (map) {
+            map.setView([lat, lng], 15);
+        }
     }
 
     function updateUIWithTelemetry() {
@@ -876,6 +937,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Initialize modules
                 document.getElementById("profile-name").textContent = `OPERATOR: ${currentUser.name.toUpperCase()}`;
                 
+                if (currentUser && currentUser.current_lat && currentUser.current_lng && currentUser.current_lat !== 0 && currentUser.current_lng !== 0) {
+                    currentCoords.lat = currentUser.current_lat;
+                    currentCoords.lng = currentUser.current_lng;
+                }
+                
                 initMap();
                 initTelemetry();
                 syncSettingsUIWithUser(currentUser);
@@ -921,6 +987,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 sessionStorage.setItem("token", authToken);
 
                 document.getElementById("profile-name").textContent = `OPERATOR: ${currentUser.name.toUpperCase()}`;
+                
+                if (currentUser && currentUser.current_lat && currentUser.current_lng && currentUser.current_lat !== 0 && currentUser.current_lng !== 0) {
+                    currentCoords.lat = currentUser.current_lat;
+                    currentCoords.lng = currentUser.current_lng;
+                }
+                
                 initMap();
                 initTelemetry();
                 syncSettingsUIWithUser(currentUser);
@@ -1003,12 +1075,152 @@ document.addEventListener("DOMContentLoaded", () => {
     // ------------------------------------------
     let selectedAvatar = "avatar-shield";
 
+    function renderAvatar(elementId, avatarValue) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        if (!avatarValue) {
+            el.innerHTML = "👤";
+            return;
+        }
+        if (avatarValue.startsWith("data:") || avatarValue.startsWith("http") || avatarValue.startsWith("/") || avatarValue.includes("/")) {
+            el.innerHTML = `<img src="${avatarValue}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;" />`;
+        } else {
+            const avatarMap = { "avatar-shield": "🛡️", "avatar-eye": "👁️", "avatar-falcon": "🦅", "avatar-ghost": "👻" };
+            el.innerHTML = avatarMap[avatarValue] || avatarValue || "👤";
+        }
+    }
+
+    // Webcam stream state
+    let webcamStream = null;
+
+    function stopWebcam() {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach(track => track.stop());
+            webcamStream = null;
+        }
+        const cameraContainer = document.getElementById("camera-container");
+        if (cameraContainer) cameraContainer.classList.add("hidden");
+    }
+
+    function processAndSetAvatar(fileOrBlob) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                // Resize to max 250x250
+                const canvas = document.createElement("canvas");
+                const maxDim = 250;
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                    if (width > maxDim) {
+                        height *= maxDim / width;
+                        width = maxDim;
+                    }
+                } else {
+                    if (height > maxDim) {
+                        width *= maxDim / height;
+                        height = maxDim;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const compressedBase64 = canvas.toDataURL("image/jpeg", 0.75);
+                selectedAvatar = compressedBase64;
+                renderAvatar("profile-avatar-display", selectedAvatar);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(fileOrBlob);
+    }
+
+    // Attach File and Camera Listeners
+    setTimeout(() => {
+        const avatarUploadInput = document.getElementById("avatar-upload-input");
+        if (avatarUploadInput) {
+            avatarUploadInput.addEventListener("change", (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    processAndSetAvatar(file);
+                }
+            });
+        }
+
+        // Take Photo button click
+        const btnTakePhoto = document.getElementById("btn-take-photo");
+        const cameraContainer = document.getElementById("camera-container");
+        if (btnTakePhoto) {
+            btnTakePhoto.addEventListener("click", async () => {
+                stopWebcam();
+                if (cameraContainer) cameraContainer.classList.remove("hidden");
+                try {
+                    webcamStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 300 }, height: { ideal: 300 }, facingMode: "user" }
+                    });
+                    const video = document.getElementById("webcam-preview");
+                    if (video) video.srcObject = webcamStream;
+                } catch (err) {
+                    alert("Camera Initialization Failure: " + err.message);
+                    if (cameraContainer) cameraContainer.classList.add("hidden");
+                }
+            });
+        }
+
+        // Camera Capture action
+        const btnCameraCapture = document.getElementById("btn-camera-capture");
+        if (btnCameraCapture) {
+            btnCameraCapture.addEventListener("click", () => {
+                const video = document.getElementById("webcam-preview");
+                if (!video || !webcamStream) return;
+                
+                const canvas = document.createElement("canvas");
+                canvas.width = video.videoWidth || 300;
+                canvas.height = video.videoHeight || 300;
+                const ctx = canvas.getContext("2d");
+                
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        processAndSetAvatar(blob);
+                    }
+                }, "image/jpeg", 0.75);
+                
+                stopWebcam();
+            });
+        }
+
+        // Camera Cancel action
+        const btnCameraCancel = document.getElementById("btn-camera-cancel");
+        if (btnCameraCancel) {
+            btnCameraCancel.addEventListener("click", () => {
+                stopWebcam();
+            });
+        }
+
+        // Remove Avatar button click
+        const btnRemoveAvatar = document.getElementById("btn-remove-avatar");
+        if (btnRemoveAvatar) {
+            btnRemoveAvatar.addEventListener("click", () => {
+                selectedAvatar = "";
+                renderAvatar("profile-avatar-display", "");
+            });
+        }
+    }, 100);
+
     function openProfileGateway() {
         if (!currentUser) return;
         
         document.getElementById("profile-name-input").value = currentUser.name;
         document.getElementById("profile-phone-input").value = currentUser.emergency_phone || "";
         document.getElementById("profile-email-input").value = currentUser.email;
+        const emailDisp = document.getElementById("profile-email-display");
+        if (emailDisp) emailDisp.value = currentUser.email;
         document.getElementById("profile-blood-input").value = currentUser.blood_group || "O+";
         document.getElementById("profile-address-input").value = currentUser.address || "";
         
@@ -1018,27 +1230,9 @@ document.addEventListener("DOMContentLoaded", () => {
         showScreen("profile");
     }
 
-    // Avatar selections badges
-    const avatarBadges = document.querySelectorAll(".avatar-badge");
-    avatarBadges.forEach(badge => {
-        badge.addEventListener("click", () => {
-            avatarBadges.forEach(b => b.classList.remove("active"));
-            badge.classList.add("active");
-            selectedAvatar = badge.getAttribute("data-id");
-        });
-    });
-
     function highlightActiveAvatar(avatarId) {
-        avatarBadges.forEach(b => {
-            if (b.getAttribute("data-id") === avatarId) {
-                b.classList.add("active");
-            } else {
-                b.classList.remove("active");
-            }
-        });
-        
-        const avatarMap = { "avatar-shield": "🛡️", "avatar-eye": "👁️", "avatar-falcon": "🦅", "avatar-ghost": "👻" };
-        document.getElementById("btn-dashboard-profile").textContent = avatarMap[avatarId] || "👤";
+        renderAvatar("profile-avatar-display", avatarId);
+        renderAvatar("btn-dashboard-profile", avatarId);
     }
 
     // Profile updates submission
@@ -1073,9 +1267,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 syncSettingsUIWithUser(currentUser);
                 alert("Operational profile sync saved.");
                 
-                // Collapse edit form and stay on settings screen
-                const editSec = document.getElementById("profile-edit-section");
-                if (editSec) editSec.classList.add("hidden");
+                // Stay on profile screen
                 showScreen("profile");
             } else {
                 alert("Failed to sync profile telemetry data.");
@@ -1084,6 +1276,67 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Profile telemetry transaction timed out.");
         }
     });
+
+    function openIdentityGateway() {
+        if (!currentUser) return;
+        
+        document.getElementById("identity-email-input").value = currentUser.email || "";
+        document.getElementById("identity-phone-input").value = currentUser.phone || "";
+        document.getElementById("identity-password-input").value = "";
+
+        showScreen("identity");
+    }
+
+    // Identity updates submission
+    const identityForm = document.getElementById("identity-form");
+    if (identityForm) {
+        identityForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById("identity-email-input").value.trim();
+            const phone = document.getElementById("identity-phone-input").value.trim();
+            const password = document.getElementById("identity-password-input").value;
+
+            if (email && !isValidEmail(email)) {
+                alert("Invalid Email Format: Please enter a valid email address.");
+                return;
+            }
+
+            if (phone && !isValidPhone(phone)) {
+                alert("Invalid Personal Phone Format: Please enter a valid phone number.");
+                return;
+            }
+
+            try {
+                const response = await fetch("/api/identity/update", {
+                    method: "POST",
+                    headers: authHeaders(),
+                    body: JSON.stringify({
+                        email: email || null,
+                        phone: phone || null,
+                        password: password || null
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentUser = data.user;
+                    sessionStorage.setItem("user", JSON.stringify(currentUser));
+                    
+                    // Update email display in profile form
+                    const profileEmailDisp = document.getElementById("profile-email-display");
+                    if (profileEmailDisp) profileEmailDisp.value = currentUser.email || "";
+                    
+                    alert("Security credentials and identity synced.");
+                    showScreen("settings");
+                } else {
+                    alert("Identity Sync Failed: " + (data.detail || "Unknown error"));
+                }
+            } catch (err) {
+                alert("Identity sync transaction timed out.");
+            }
+        });
+    }
 
     // Evidence Vault feature removed per user request
 

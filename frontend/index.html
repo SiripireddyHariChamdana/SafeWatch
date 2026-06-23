@@ -178,7 +178,8 @@
                     <h1 class="app-title-text neon-text-blue" id="hub-logo-text">SafeWatch</h1>
                     <p class="app-welcome-text" id="profile-welcome">Hello, User</p>
                 </div>
-                <div class="header-profile-telemetry">
+                <div class="header-profile-telemetry" style="display: flex; align-items: center; gap: 15px;">
+                    <div id="btn-dashboard-profile" class="header-avatar-circle" title="Open Profile" style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--accent-glow); font-size: 1.2rem; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 10px rgba(var(--accent-glow-rgb), 0.2); overflow: hidden;">👤</div>
                     <!-- Keep elements to prevent JS errors -->
                     <span id="profile-name" style="display: none;">OPERATOR: SECURE</span>
                     <button id="btn-logout-dummy" style="display: none;"></button>
@@ -257,32 +258,52 @@
         <section id="screen-profile" class="app-screen">
             <div class="glass-card panel-container" style="max-width: 480px; margin: 0 auto;">
                 <div class="panel-header" style="justify-content: center; position: relative;">
-                    <h2 class="orbitron-heading neon-text-blue" style="font-size: 1.3rem;">PROFILE &amp; SETTINGS</h2>
+                    <h2 class="orbitron-heading neon-text-blue" style="font-size: 1.3rem;">👤 OPERATOR PROFILE</h2>
                     <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);">← BACK</button>
                 </div>
 
                 <!-- Avatar Block -->
-                <div class="settings-avatar-container">
-                    <div class="avatar-large-circle" id="profile-avatar-display">👤</div>
-                    <div class="avatar-edit-badge" id="btn-edit-profile-trigger" title="Edit Profile Details">✏️</div>
+                <div class="settings-avatar-container" style="margin-bottom: 20px; text-align: center;">
+                    <div class="avatar-large-circle" id="profile-avatar-display" style="width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--accent-glow); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 3rem; background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 15px rgba(var(--accent-glow-rgb), 0.3); overflow: hidden; position: relative;">👤</div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                        <!-- File Upload Button -->
+                        <label for="avatar-upload-input" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow" style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            📁 UPLOAD
+                            <input type="file" id="avatar-upload-input" accept="image/*" style="display: none;">
+                        </label>
+                        <!-- Webcam Button -->
+                        <button id="btn-take-photo" type="button" class="cyber-btn-outline font-orbitron btn-small btn-purple-glow" style="display: flex; align-items: center; gap: 5px;">
+                            📷 TAKE PHOTO
+                        </button>
+                        <!-- Remove Button -->
+                        <button id="btn-remove-avatar" type="button" class="cyber-btn-outline font-orbitron btn-small btn-red" style="display: flex; align-items: center; gap: 5px;">
+                            🗑️ REMOVE
+                        </button>
+                    </div>
+
+                    <!-- Hidden Edit Trigger to satisfy original app.js references -->
+                    <div id="btn-edit-profile-trigger" style="display: none !important;"></div>
                 </div>
 
-                <!-- Collapsible Profile Edit Form (Hidden by default) -->
-                <div id="profile-edit-section" class="settings-block glass-card hidden mt-15 mb-15" style="border: 1px solid rgba(0, 242, 255, 0.2); padding: 20px; border-radius: 20px;">
-                    <h3 class="orbitron-heading font-small neon-text-blue mb-15">EDIT IDENTITY TELEMETRY</h3>
+                <!-- Camera Container -->
+                <div id="camera-container" class="hidden mt-15 mb-15" style="border: 1px dashed var(--accent-glow); padding: 15px; border-radius: 20px; background: rgba(0, 0, 0, 0.4); text-align: center;">
+                    <video id="webcam-preview" autoplay playsinline style="width: 100%; max-width: 320px; border-radius: 12px; transform: scaleX(-1); border: 2px solid var(--accent-glow); margin: 0 auto 10px; display: block;"></video>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button id="btn-camera-capture" type="button" class="cyber-btn btn-blue font-orbitron btn-small">📸 CAPTURE</button>
+                        <button id="btn-camera-cancel" type="button" class="cyber-btn-outline font-orbitron btn-small">CANCEL</button>
+                    </div>
+                </div>
+
+                <!-- Profile Edit Form (Directly visible, NOT hidden by default) -->
+                <div id="profile-edit-section" class="settings-block glass-card mt-15 mb-15" style="border: 1px solid rgba(0, 242, 255, 0.2); padding: 20px; border-radius: 20px;">
+                    <h3 class="orbitron-heading font-small neon-text-blue mb-15" style="text-align: center;">OPERATOR TELEMETRY</h3>
                     <form id="profile-form" class="auth-form">
-                        <div class="profile-avatar-selector-section">
-                            <div class="form-group">
-                                <label style="font-size: 0.75rem;">SELECT PROFILE AVATAR</label>
-                                <div class="avatar-badge-strip" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <div class="avatar-badge active" data-id="avatar-shield" style="font-size: 0.75rem; padding: 6px 10px;">🛡️ SHIELD</div>
-                                    <div class="avatar-badge" data-id="avatar-eye" style="font-size: 0.75rem; padding: 6px 10px;">👁️ BEACON</div>
-                                    <div class="avatar-badge" data-id="avatar-falcon" style="font-size: 0.75rem; padding: 6px 10px;">🦅 FALCON</div>
-                                    <div class="avatar-badge" data-id="avatar-ghost" style="font-size: 0.75rem; padding: 6px 10px;">👻 STEALTH</div>
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.75rem;">SECURE EMAIL IDENTIFIER</label>
+                            <input type="text" id="profile-email-display" class="critical-input" readonly style="padding: 10px 14px !important; font-size: 0.9rem !important; opacity: 0.7; background-color: rgba(255,255,255,0.05) !important; color: rgba(255,255,255,0.7) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important;">
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="profile-name-input" style="font-size: 0.75rem;">OPERATOR FULL NAME</label>
                             <input type="text" id="profile-name-input" class="critical-input" required style="padding: 10px 14px !important; font-size: 0.9rem !important;">
@@ -316,86 +337,48 @@
                             <textarea id="profile-address-input" class="critical-input textarea-styled" rows="2" required style="padding: 10px 14px !important; font-size: 0.9rem !important;"></textarea>
                         </div>
 
-                        <button type="submit" class="cyber-btn btn-blue font-orbitron w-100" style="padding: 10px 20px; font-size: 0.85rem;">SAVE PROFILE</button>
+                        <button type="submit" class="cyber-btn btn-blue font-orbitron w-100" style="padding: 12px 20px; font-size: 0.9rem;">SAVE PROFILE</button>
                     </form>
                 </div>
 
-                <!-- Section 1: Advanced Engineering Tools -->
-                <div class="settings-section-header text-neon-pink">Advanced Engineering Tools</div>
-                <div class="settings-rows-list">
-                    <!-- Row 1: Hardware Triggers -->
-                    <div class="settings-row-item" id="row-settings-hardware">
-                        <div class="settings-row-left">
-                            <span class="settings-row-icon">🔌</span>
-                            <span class="settings-row-label">Hardware Triggers</span>
-                        </div>
-                        <span class="settings-row-chevron">&gt;</span>
-                    </div>
-
-                    <!-- Row 2: Last Breath Protocol -->
-                    <div class="settings-row-item" id="row-settings-lastbreath">
-                        <div class="settings-row-left">
-                            <span class="settings-row-icon">🔋</span>
-                            <span class="settings-row-label">Last Breath Protocol</span>
-                        </div>
-                        <span class="settings-row-chevron">&gt;</span>
-                    </div>
-
-                    <!-- Row 3: SafeZone Manager -->
-                    <div class="settings-row-item" id="row-settings-safezone">
-                        <div class="settings-row-left">
-                            <span class="settings-row-icon">📍</span>
-                            <span class="settings-row-label">SafeZone Manager</span>
-                        </div>
-                        <span class="settings-row-chevron">&gt;</span>
-                    </div>
-
-                    <!-- Row 4: Safety Radar Heatmap -->
-                    <div class="settings-row-item" id="row-settings-heatmap">
-                        <div class="settings-row-left">
-                            <span class="settings-row-icon">📡</span>
-                            <span class="settings-row-label">Safety Radar Heatmap</span>
-                        </div>
-                        <span class="settings-row-chevron">&gt;</span>
-                    </div>
-                </div>
-
-                <!-- Section 2: System & Evidence -->
-                <div class="settings-section-header text-neon-cyan">System &amp; Evidence</div>
-                <div class="settings-rows-list">
-                    <!-- Row 5: Emergency Contacts -->
-                    <div class="settings-row-item" id="row-settings-contacts">
-                        <div class="settings-row-left">
-                            <span class="settings-row-icon">👥</span>
-                            <span class="settings-row-label">Emergency Contacts</span>
-                        </div>
-                        <span class="settings-row-chevron">&gt;</span>
-                    </div>
-
-                    <!-- Row 6: Voice Notes -->
-                    <div class="settings-row-item" id="row-settings-voicenotes">
-                        <div class="settings-row-left">
-                            <span class="settings-row-icon">🎙️</span>
-                            <span class="settings-row-label">Voice Notes</span>
-                        </div>
-                        <span class="settings-row-chevron">&gt;</span>
-                    </div>
-
-                    <!-- Row 7: App Settings -->
-                    <div class="settings-row-item" id="row-settings-app">
-                        <div class="settings-row-left">
-                            <span class="settings-row-icon">⚙️</span>
-                            <span class="settings-row-label">App Settings</span>
-                        </div>
-                        <span class="settings-row-chevron">&gt;</span>
-                    </div>
-                </div>
-
                 <!-- Logout Button -->
-                <button id="btn-settings-logout" class="settings-logout-btn">Logout from SafeWatch</button>
+                <button id="btn-settings-logout" class="settings-logout-btn" style="margin-top: 10px;">Logout from SafeWatch</button>
 
                 <!-- Hidden elements to preserve JS compatibility -->
                 <button id="btn-logout" style="display: none !important;"></button>
+            </div>
+        </section>
+
+        <!-- SCREEN: IDENTITY & SECURITY SETTINGS -->
+        <section id="screen-identity" class="app-screen">
+            <div class="glass-card panel-container" style="max-width: 480px; margin: 0 auto;">
+                <div class="panel-header" style="justify-content: center; position: relative;">
+                    <h2 class="orbitron-heading neon-text-purple" style="font-size: 1.3rem;">🔑 IDENTITY &amp; SECURITY</h2>
+                    <button class="cyber-btn-outline font-orbitron btn-small btn-back-settings" style="position: absolute; left: 0; top: 50%; transform: translateY(-50%);">← BACK</button>
+                </div>
+
+                <div class="settings-block glass-card mt-15 mb-15" style="border: 1px solid rgba(189, 0, 255, 0.2); padding: 20px; border-radius: 20px;">
+                    <h3 class="orbitron-heading font-small neon-text-purple mb-15" style="text-align: center;">CREDENTIAL MANAGEMENT</h3>
+                    <form id="identity-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="identity-email-input" style="font-size: 0.75rem;">SECURE LOGIN EMAIL</label>
+                            <input type="email" id="identity-email-input" class="critical-input" placeholder="name@example.com" style="padding: 10px 14px !important; font-size: 0.9rem !important;">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="identity-phone-input" style="font-size: 0.75rem;">PERSONAL LOGIN PHONE</label>
+                            <input type="text" id="identity-phone-input" class="critical-input" placeholder="+1234567890" style="padding: 10px 14px !important; font-size: 0.9rem !important;">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="identity-password-input" style="font-size: 0.75rem;">NEW ACCESS PIN / PASSWORD</label>
+                            <input type="password" id="identity-password-input" class="critical-input" placeholder="••••••••" style="padding: 10px 14px !important; font-size: 0.9rem !important;">
+                            <span class="settings-btn-desc" style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 5px;">Leave blank to keep current password.</span>
+                        </div>
+
+                        <button type="submit" class="cyber-btn btn-purple font-orbitron w-100" style="padding: 12px 20px; font-size: 0.9rem; margin-top: 15px;">SAVE IDENTITY DETAILS</button>
+                    </form>
+                </div>
             </div>
         </section>
 
@@ -468,17 +451,42 @@
                 </div>
 
                 <div class="settings-layout" style="grid-template-columns: 1fr; gap: 15px; margin-top: 20px;">
+                    <!-- Section 1: Account Settings -->
+                    <div class="settings-section-header text-neon-blue" style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px;">Account Settings</div>
                     <div class="settings-rows-list">
-                        <!-- Button 1: Profile & Identity -->
                         <div class="settings-row-item" id="settings-btn-profile">
                             <div class="settings-row-left">
                                 <span class="settings-row-icon">👤</span>
-                                <span class="settings-row-label">Profile &amp; Identity Settings</span>
+                                <span class="settings-row-label">Profile Settings</span>
                             </div>
                             <span class="settings-row-chevron">&gt;</span>
                         </div>
+                        <div class="settings-row-item" id="settings-btn-identity">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">🔑</span>
+                                <span class="settings-row-label">Identity Settings</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+                    </div>
 
-                        <!-- Button 2: Hardware Triggers -->
+                    <!-- Section 2: Advanced Safety Tools -->
+                    <div class="settings-section-header text-neon-pink" style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; margin-top: 10px; letter-spacing: 1px;">Advanced Safety Tools</div>
+                    <div class="settings-rows-list">
+                        <div class="settings-row-item" id="row-settings-safezone">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">📍</span>
+                                <span class="settings-row-label">SafeZone Manager</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+                        <div class="settings-row-item" id="row-settings-heatmap">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">📡</span>
+                                <span class="settings-row-label">Safety Radar Heatmap</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
                         <div class="settings-row-item" id="settings-btn-hardware">
                             <div class="settings-row-left">
                                 <span class="settings-row-icon">🔌</span>
@@ -486,8 +494,6 @@
                             </div>
                             <span class="settings-row-chevron">&gt;</span>
                         </div>
-
-                        <!-- Button 3: Last Breath Protocol -->
                         <div class="settings-row-item" id="settings-btn-lastbreath">
                             <div class="settings-row-left">
                                 <span class="settings-row-icon">🔋</span>
@@ -495,8 +501,6 @@
                             </div>
                             <span class="settings-row-chevron">&gt;</span>
                         </div>
-
-                        <!-- Button 4: Shake to Alert -->
                         <div class="settings-row-item" id="settings-btn-shake">
                             <div class="settings-row-left">
                                 <span class="settings-row-icon">📳</span>
@@ -504,8 +508,25 @@
                             </div>
                             <span class="settings-row-chevron">&gt;</span>
                         </div>
+                    </div>
 
-                        <!-- Button 5: Themes -->
+                    <!-- Section 3: Communications & Style -->
+                    <div class="settings-section-header text-neon-cyan" style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; margin-top: 10px; letter-spacing: 1px;">Communications &amp; Style</div>
+                    <div class="settings-rows-list">
+                        <div class="settings-row-item" id="row-settings-contacts">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">👥</span>
+                                <span class="settings-row-label">Emergency Contacts</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
+                        <div class="settings-row-item" id="row-settings-voicenotes">
+                            <div class="settings-row-left">
+                                <span class="settings-row-icon">🎙️</span>
+                                <span class="settings-row-label">Voice Notes Vault</span>
+                            </div>
+                            <span class="settings-row-chevron">&gt;</span>
+                        </div>
                         <div class="settings-row-item" id="settings-btn-themes">
                             <div class="settings-row-left">
                                 <span class="settings-row-icon">🎨</span>
@@ -516,7 +537,7 @@
                     </div>
 
                     <!-- Page level logout button -->
-                    <button id="btn-settings-logout-page" class="settings-logout-btn">Logout from SafeWatch</button>
+                    <button id="btn-settings-logout-page" class="settings-logout-btn" style="margin-top: 15px;">Logout from SafeWatch</button>
                 </div>
             </div>
         </section>
@@ -1052,17 +1073,22 @@
         <select id="settings-fake-caller-id"><option value="Mom / Emergency Contact">Mom</option></select>
         <select id="settings-fake-delay"><option value="0">0</option></select>
         <button id="btn-settings-trigger-fake-call"></button>
-        <div id="btn-dashboard-profile"></div>
-        <button id="nav-btn-profile"></button>
     </div>
 
-    <!-- BOTTOM FLOATING NAVIGATION BAR (Only Home and Settings) -->
+    <!-- BOTTOM FLOATING NAVIGATION BAR (Home, Profile, Settings) -->
     <div id="app-bottom-nav" class="bottom-nav-container">
         <button id="nav-btn-home" class="nav-item active" onclick="showScreenFromNav('dashboard')">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
             </svg>
             <span class="nav-label">Home</span>
+        </button>
+        <button id="nav-btn-profile" class="nav-item" onclick="showScreenFromNav('profile')">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span class="nav-label">Profile</span>
         </button>
         <button id="nav-btn-settings" class="nav-item" onclick="showScreenFromNav('settings')">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1077,7 +1103,7 @@
         function showScreenFromNav(screenKey) {
             const screensList = [
                 'login', 'signup', 'verify', 'forgot', 'reset',
-                'dashboard', 'profile', 'safezone', 'history', 
+                'dashboard', 'profile', 'identity', 'safezone', 'history', 
                 'settings', 'sosActive', 'timer', 'circle', 
                 'fakecallConfig', 'fakecallActive', 'fakecallTalking',
                 'last-breath', 'shake-trigger', 'theme-changing', 'hardware-triggers', 'voice-notes', 'live-tracking'

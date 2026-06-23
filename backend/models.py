@@ -39,7 +39,7 @@ class User(Base):
     blood_group = Column(String(10), default="O+")
     address = Column(Text, nullable=True)
     emergency_phone = Column(String(20), nullable=True)
-    avatar = Column(String(50), default="avatar-shield")
+    avatar = Column(Text, default="avatar-shield")
     
     # Verification and password reset
     is_verified = Column(Boolean, default=False)

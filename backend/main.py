@@ -320,6 +320,12 @@ class ResetPasswordRequest(BaseModel):
 class VerifyPasswordRequest(BaseModel):
     password: str
 
+class IdentityUpdate(BaseModel):
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+
+
 # ==========================================
 # HELPER FUNCTIONS - VALIDATION
 # ==========================================
@@ -825,6 +831,61 @@ async def api_register_profile(
     
     return {
         "status": "success",
+        "user": UserResponse.from_orm(user)
+    }
+
+@app.post("/api/identity/update")
+async def api_update_identity(
+    req: IdentityUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update user login identity (email, phone, password)"""
+    user = current_user
+    
+    # 1. Update Email
+    if req.email is not None:
+        email = req.email.lower().strip()
+        if email != "":
+            if not is_valid_email(email):
+                raise HTTPException(status_code=400, detail="Invalid email format")
+            # Check if email is already taken by another user
+            existing = db.query(User).filter(User.email == email, User.id != user.id).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Email already registered by another account")
+            user.email = email
+        else:
+            user.email = None
+
+    # 2. Update Phone
+    if req.phone is not None:
+        phone = normalize_phone_number(req.phone)
+        if phone != "":
+            if not is_valid_phone(phone):
+                raise HTTPException(status_code=400, detail="Invalid phone format")
+            # Check if phone is already taken by another user
+            existing = db.query(User).filter(User.phone == phone, User.id != user.id).first()
+            if existing:
+                raise HTTPException(status_code=400, detail="Phone number already registered by another account")
+            user.phone = phone
+        else:
+            user.phone = None
+
+    # Check that at least one identifier is retained
+    if not user.email and not user.phone:
+        raise HTTPException(status_code=400, detail="Either email or phone is required to retain login access")
+
+    # 3. Update Password
+    if req.password is not None and req.password.strip() != "":
+        user.password_hash = hash_password(req.password)
+
+    user.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "status": "success",
+        "message": "Security and identity details synchronized.",
         "user": UserResponse.from_orm(user)
     }
 
