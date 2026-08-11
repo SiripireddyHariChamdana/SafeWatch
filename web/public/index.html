@@ -9,13 +9,14 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --dark-navy: #0A0E21;
-            --card-navy: #161B33;
+            --dark-navy: #0B101B;
+            --card-bg: rgba(255, 255, 255, 0.05);
             --neon-blue: #00F2FF;
             --neon-purple: #BD00FF;
             --red-sos: #FF4B4B;
             --success-green: #4CAF50;
-            --text-gray: #B0B0B0;
+            --text-gray: rgba(255, 255, 255, 0.6);
+            --input-bg: #FFFFFF;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
@@ -23,16 +24,22 @@
         body {
             margin: 0; padding: 0;
             background: var(--dark-navy);
-            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
             color: white;
             overflow-x: hidden;
             display: flex; justify-content: center;
+            height: 100vh;
         }
 
-        /* Container for Desktop centering */
+        /* Centered Mobile Aesthetic Container */
         .app-container {
             width: 100%; max-width: 500px; min-height: 100vh;
-            position: relative; background: var(--dark-navy);
+            position: relative; background: radial-gradient(circle at top, #111827 0%, #0B101B 100%);
+            display: flex; flex-direction: column;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -40,15 +47,17 @@
 
         .screen {
             display: none; min-height: 100vh; width: 100%;
-            flex-direction: column; padding: 24px;
-            animation: fadeIn 0.4s ease-out; align-items: center;
+            flex-direction: column; padding: 20px;
+            animation: fadeIn 0.4s ease-out;
+            flex-grow: 1;
+            align-items: center;
         }
         .active { display: flex; }
 
         /* SPLASH */
         #splash-screen {
-            background: var(--dark-navy); justify-content: center; align-items: center;
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+            background: var(--dark-navy); display: flex; justify-content: center; align-items: center;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; flex-direction: column;
         }
         .splash-card {
             width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1);
@@ -61,164 +70,322 @@
             -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'/%3E%3C/svg%3E") no-repeat center;
         }
 
+        /* ONBOARDING */
+        .onboarding-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 16px; }
+        .onboarding-icon-box { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; margin-bottom: 48px; }
+        .onboarding-glow { position: absolute; width: 150px; height: 150px; border-radius: 50%; filter: blur(40px); opacity: 0.2; }
+        .indicator-row { display: flex; gap: 8px; margin-bottom: 40px; }
+        .indicator { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.2); transition: 0.3s; }
+        .indicator.active-ind { width: 24px; }
+        .indicator.inactive-ind { width: 8px; }
+
         /* AUTH */
-        .card {
-            background: var(--card-navy); padding: 32px; border-radius: 28px; width: 100%;
-            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        .auth-card {
+            background: rgba(255, 255, 255, 0.05); padding: 32px; border-radius: 28px; width: 100%;
+            text-align: center; border: 1px solid rgba(0, 242, 255, 0.15); backdrop-filter: blur(10px);
+            margin-top: auto; margin-bottom: auto;
         }
+        .input-group { position: relative; width: 100%; margin: 8px 0; }
         input {
-            width: 100%; padding: 18px; margin: 8px 0; border-radius: 16px; border: none;
-            background: white; color: black; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            width: 100%; padding: 18px; border-radius: 16px; border: none;
+            background: var(--input-bg); color: black; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .pass-toggle {
+            position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+            color: gray; cursor: pointer; font-size: 18px; user-select: none;
         }
         .btn-gradient {
             width: 100%; padding: 18px; border-radius: 28px; border: none;
             background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
             color: white; font-weight: bold; cursor: pointer; margin-top: 16px;
-            font-size: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            font-size: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: 0.2s;
         }
+        .btn-gradient:active { transform: scale(0.98); }
 
-        /* SOS BUTTON */
-        .sos-outer {
-            width: 200px; height: 200px; border-radius: 50%; background: rgba(255, 0, 0, 0.1);
-            display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 32px 0;
-        }
-        .sos-inner {
-            width: 160px; height: 160px; border-radius: 50%; background: var(--red-sos);
+        /* HOME SCREEN */
+        .home-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 20px; margin-bottom: 24px; }
+        .app-title { font-size: 38px; font-weight: 900; color: var(--neon-blue); letter-spacing: -0.5px; margin: 0; }
+        .gps-status { color: var(--text-gray); font-size: 14px; font-family: monospace; margin-top: 4px; }
+        .settings-btn { width: 50px; height: 50px; background: #1F2937; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(0, 242, 255, 0.1); }
+
+        .top-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; width: 100%; }
+        .action-card {
+            background: var(--card-bg); border-radius: 28px; height: 160px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
+            cursor: pointer; transition: 0.3s;
         }
+        .action-card.gps { border: 1px solid rgba(0, 242, 255, 0.2); }
+        .action-card.sos { border: 1px solid rgba(255, 59, 48, 0.2); }
+        .action-card:active { transform: scale(0.95); }
+        .action-card i { font-size: 40px; margin-bottom: 12px; }
+        .action-card span { font-weight: bold; font-size: 16px; }
 
-        /* GRID */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; }
-        .feature-card {
-            background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 20px;
-            text-align: center; border: 1px solid rgba(255,255,255,0.05);
-            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        .section-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; align-self: flex-start; color: white; }
+
+        .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 120px; width: 100%; }
+        .feature-item {
+            background: var(--card-bg); border-radius: 24px; height: 130px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.02);
         }
+        .feature-item i { font-size: 32px; margin-bottom: 10px; }
+        .feature-item span { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.9); }
 
-        /* SETTINGS & LISTS */
+        /* BOTTOM NAV */
+        .bottom-nav {
+            position: absolute; bottom: 30px; left: 24px; right: 24px;
+            height: 80px; background: rgba(31, 41, 55, 0.6);
+            backdrop-filter: blur(20px); border-radius: 40px;
+            display: flex; align-items: center; justify-content: space-around;
+            padding: 0 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .nav-item { font-size: 28px; cursor: pointer; color: #6B7280; transition: 0.3s; }
+        .nav-item.active-nav { color: var(--neon-blue); }
+
+        /* PROFILE */
+        .avatar-section { position: relative; margin-bottom: 32px; }
+        .avatar-circle { width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid rgba(0, 242, 255, 0.2); }
+        .camera-fab { position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--neon-blue); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        /* SETTINGS */
+        .settings-container { width: 100%; margin-top: 24px; }
         .setting-item {
-            background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 20px;
-            margin-bottom: 12px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
+            background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 20px;
+            margin-bottom: 12px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.02); cursor: pointer;
+            width: 100%;
         }
         .setting-icon-box {
             width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, 0.05);
-            display: flex; align-items: center; justify-content: center; margin-right: 16px;
+            display: flex; align-items: center; justify-content: center; margin-right: 16px; font-size: 18px;
         }
+        .back-row { width: 100%; display: flex; align-items: center; margin-bottom: 32px; margin-top: 32px; }
+        .back-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; }
 
         /* MAP */
-        #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; }
+        #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
         .map-header { position: absolute; top: 0; left: 0; width: 100%; z-index: 1000; padding: 16px; display: flex; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
-        .back-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- SCREEN 0: SPLASH -->
         <div id="splash-screen">
             <div class="splash-card"><div class="shield-icon"></div></div>
-            <div style="margin-top: 24px; font-size: 32px; font-weight: bold;">ShadowGuard</div>
-            <div style="color: var(--neon-blue); font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-top: 8px;">YOUR DIGITAL SHIELD</div>
+            <div style="margin-top: 24px; font-size: 32px; font-weight: 900;">SafeWatch</div>
+            <div style="color: var(--neon-blue); font-size: 10px; font-weight: bold; letter-spacing: 2px; margin-top: 8px;">YOUR DIGITAL SHIELD</div>
         </div>
 
-        <!-- LOGIN -->
+        <!-- SCREEN 1: ONBOARDING -->
+        <div id="onboarding-screen" class="screen">
+            <div style="width: 100%; display: flex; justify-content: flex-end;">
+                <button style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 14px; cursor: pointer;" onclick="showScreen('login-screen')">Skip</button>
+            </div>
+            <div class="onboarding-content">
+                <div class="onboarding-icon-box">
+                    <div id="onb-glow" class="onboarding-glow"></div>
+                    <div id="onb-icon" style="font-size: 80px; z-index: 2;">📍</div>
+                </div>
+                <h1 id="onb-title" style="font-size: 28px; font-weight: bold; margin: 0;">Live GPS Tracking</h1>
+                <p id="onb-desc" style="color: var(--text-gray); font-size: 16px; margin-top: 16px; line-height: 1.5;">Share your real-time location with your trusted emergency circle.</p>
+            </div>
+            <div class="indicator-row">
+                <div class="indicator active-ind" id="ind-0"></div>
+                <div class="indicator inactive-ind" id="ind-1"></div>
+                <div class="indicator inactive-ind" id="ind-2"></div>
+            </div>
+            <button class="btn-gradient" id="onb-btn" onclick="nextOnboarding()" style="height: 64px; border-radius: 16px; margin-bottom: 48px;">Continue</button>
+        </div>
+
+        <!-- SCREEN 2: LOGIN -->
         <div id="login-screen" class="screen">
-            <div class="splash-card" style="margin-top: 48px;"><div class="shield-icon"></div></div>
-            <h1 style="font-size: 28px; font-weight: bold; margin-top: 24px;">SafeWatch Login</h1>
-            <p style="color: rgba(255,255,255,0.6); margin-bottom: 48px;">Login with Email or Phone</p>
-            <div class="card">
-                <input type="email" id="login-email" placeholder="Email or Phone Number">
-                <input type="password" id="login-pass" placeholder="Password">
+            <div class="splash-card" style="margin-top: 48px; width: 80px; height: 80px;"><div class="shield-icon" style="width:40px; height:40px;"></div></div>
+            <h1 style="font-size: 32px; font-weight: 900; color: var(--neon-blue); margin-top: 24px; margin-bottom: 0;">SafeWatch</h1>
+            <p style="color: var(--text-gray); font-size: 14px; margin-top: 8px; margin-bottom: 48px;">Login with Email or Phone</p>
+            <div class="auth-card">
+                <input type="email" id="login-email" placeholder="Email Address">
+                <div class="input-group">
+                    <input type="password" id="login-pass" placeholder="Password">
+                    <span class="pass-toggle" onclick="togglePassword('login-pass', this)">👁️</span>
+                </div>
+                <div style="text-align: right; color: var(--neon-blue); font-size: 12px; font-weight: bold; margin-top: 8px; cursor: pointer;" onclick="alert('Reset link sent to email')">Forgot Password?</div>
                 <button class="btn-gradient" onclick="handleLogin()">Login to SafeWatch</button>
-                <p style="margin-top: 32px; font-size: 14px;">New? <span style="color: var(--neon-blue); cursor: pointer;" onclick="showScreen('signup-screen')">Sign Up</span></p>
+                <p style="margin-top: 32px; font-size: 14px; color: var(--text-gray);">New here? <span style="color: var(--neon-blue); font-weight: bold; cursor: pointer;" onclick="showScreen('signup-screen')">Sign Up</span></p>
             </div>
         </div>
 
-        <!-- SIGNUP -->
+        <!-- SCREEN 3: SIGNUP -->
         <div id="signup-screen" class="screen">
-            <div class="splash-card" style="margin-top: 48px;"><div class="shield-icon"></div></div>
-            <h1 style="font-size: 28px; font-weight: bold; margin-top: 24px;">Create Account</h1>
-            <div class="card">
+            <h1 style="font-size: 28px; font-weight: bold; margin-top: 48px; margin-bottom: 0;">Create Account</h1>
+            <p style="color: var(--text-gray); font-size: 14px; margin-top: 8px; margin-bottom: 32px;">Join SafeWatch for maximum protection</p>
+            <div class="auth-card">
                 <input type="text" id="reg-name" placeholder="Full Name">
                 <input type="email" id="reg-email" placeholder="Email Address">
-                <input type="password" id="reg-pass" placeholder="Password">
-                <button class="btn-gradient" onclick="handleSignup()">Register</button>
-                <p onclick="showScreen('login-screen')" style="margin-top:20px; cursor:pointer;">Back to Login</p>
+                <input type="text" id="reg-phone" placeholder="Phone Number">
+                <div class="input-group">
+                    <input type="password" id="reg-pass" placeholder="Password">
+                    <span class="pass-toggle" onclick="togglePassword('reg-pass', this)">👁️</span>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="reg-confirm" placeholder="Confirm Password">
+                    <span class="pass-toggle" onclick="togglePassword('reg-confirm', this)">👁️</span>
+                </div>
+                <button class="btn-gradient" onclick="handleSignup()">Register for SafeWatch</button>
+                <p style="margin-top: 32px; font-size: 14px; color: var(--text-gray);">Already a member? <span style="color: var(--neon-blue); font-weight: bold; cursor: pointer;" onclick="showScreen('login-screen')">Login</span></p>
             </div>
         </div>
 
-        <!-- HOME -->
+        <!-- SCREEN 4: HOME -->
         <div id="home-screen" class="screen">
-            <div style="display:flex; justify-content: space-between; width:100%; margin-top:40px;">
-                <div><div id="user-greeting" style="font-size: 24px; font-weight: bold;">Hello, User</div><div style="color: var(--neon-blue); font-size: 12px; font-weight: bold;">Protection Active</div></div>
-                <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="showScreen('settings-screen')">⚙️</div>
-            </div>
-
-            <div class="sos-outer" onclick="startSOSFlow()">
-                <div class="sos-inner">
-                    <div style="font-size: 48px;">📡</div>
-                    <div style="font-size: 28px; font-weight: 900;">SOS</div>
+            <div class="home-header">
+                <div>
+                    <h1 class="app-title">ShadowGuard</h1>
+                    <div class="gps-status" id="home-gps">GPS: 13.0281, 80.0156</div>
+                </div>
+                <div class="settings-btn" onclick="showScreen('settings-screen')">
+                    <span style="font-size: 24px; color: var(--neon-blue)">⚙️</span>
                 </div>
             </div>
 
-            <div class="grid">
-                <div class="feature-card" style="border-color: rgba(0,242,255,0.2)" onclick="showScreen('track-screen'); initTracking(currentUser.id);"><div style="font-size: 32px; color: var(--neon-blue);">📍</div><b>Live GPS</b></div>
-                <div class="feature-card" style="border-color: rgba(189,0,255,0.2)" onclick="alert('Timer Active')"><div style="font-size: 32px; color: var(--neon-purple);">🕒</div><b>Safety Timer</b></div>
-                <div class="feature-card" style="border-color: rgba(255,255,255,0.2)" onclick="loadHistory()"><div style="font-size: 32px; color: gray;">📜</div><b>History</b></div>
-                <div class="feature-card" style="border-color: rgba(76,175,80,0.2)" onclick="loadVault()"><div style="font-size: 32px; color: var(--success-green);">🎙️</div><b>Vault</b></div>
+            <div class="top-actions">
+                <div class="action-card gps" onclick="showScreen('track-screen'); initTracking(currentUser.id);">
+                    <i style="color: var(--neon-blue)">🎯</i>
+                    <span>Live GPS</span>
+                </div>
+                <div class="action-card sos" onclick="startSOSFlow()">
+                    <i style="color: #FF3B30">⚠️</i>
+                    <span>SOS Alert</span>
+                </div>
             </div>
-            <div class="feature-card" style="width: 100%; margin-top: 16px;" onclick="showFakeCall()">📞 Fake Call</div>
+
+            <div class="section-title">Core Features</div>
+
+            <div class="features-grid">
+                <div class="feature-item" onclick="alert('Timer Active')">
+                    <i style="color: #BF5AF2">⏱️</i>
+                    <span>Safety Timer</span>
+                </div>
+                <div class="feature-item" onclick="loadHistory()">
+                    <i style="color: #9CA3AF">🕒</i>
+                    <span>Location History</span>
+                </div>
+                <div class="feature-item" onclick="loadVault()">
+                    <i style="color: #00F2FF">🎙️</i>
+                    <span>Voice Record</span>
+                </div>
+                <div class="feature-item" onclick="showFakeCall()">
+                    <i style="color: #34C759">📞</i>
+                    <span>Fake Call</span>
+                </div>
+            </div>
+
+            <div class="bottom-nav">
+                <div class="nav-item active-nav" onclick="showScreen('home-screen')">🏠</div>
+                <div class="nav-item" onclick="showScreen('profile-screen')">👤</div>
+            </div>
         </div>
 
-        <!-- SOS COUNTDOWN -->
-        <div id="sos-screen" class="screen" style="background: #240000; justify-content: center;">
-            <h1 style="color: var(--red-sos); font-size: 40px;">EMERGENCY</h1>
-            <div id="sos-timer" style="font-size: 120px; font-weight: 900;">5</div>
-            <button class="btn-gradient" style="background: white; color: black;" onclick="cancelSOS()">CANCEL SOS</button>
-        </div>
-
-        <!-- SETTINGS -->
+        <!-- SCREEN 5: SETTINGS -->
         <div id="settings-screen" class="screen">
-            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('home-screen')">←</button><h2>Settings</h2></div>
-            <div class="setting-item" onclick="showScreen('profile-screen')"><div class="setting-icon-box">👤</div><b>User Profile</b></div>
-            <div class="setting-item" onclick="openContacts()"><div class="setting-icon-box">👥</div><b>Emergency Circle</b></div>
-            <div class="setting-item" onclick="handleLogout()" style="margin-top:40px; border-color: rgba(255,0,0,0.3); color: var(--red-sos);"><b>Logout</b></div>
-        </div>
-
-        <!-- PROFILE -->
-        <div id="profile-screen" class="screen">
-            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('settings-screen')">←</button><h2>Profile</h2></div>
-            <div class="card">
-                <input type="text" id="prof-name" placeholder="Full Name">
-                <input type="text" id="prof-phone" placeholder="Phone">
-                <button class="btn-gradient" onclick="saveProfile()">Update Profile</button>
+            <div class="back-row">
+                <button class="back-btn" onclick="showScreen('home-screen')">←</button>
+                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Settings</h2>
+            </div>
+            <div class="settings-container">
+                <div class="setting-item" onclick="showScreen('profile-screen')"><div class="setting-icon-box">👤</div><div><b>User Profile</b><br><small style="opacity:0.5">Manage your personal information</small></div></div>
+                <div class="setting-item" onclick="showScreen('contacts-screen')"><div class="setting-icon-box">👥</div><div><b>Emergency Circle</b><br><small style="opacity:0.5">Manage trusted contacts</small></div></div>
+                <p style="color: var(--neon-purple); font-size: 14px; font-weight: bold; margin-top: 24px; margin-bottom: 8px;">Safety Protocol</p>
+                <div class="setting-item" onclick="showScreen('hardware-screen')"><div class="setting-icon-box">⚡</div><div><b>Hardware Triggers</b><br><small style="opacity:0.5">Silent SOS via physical buttons</small></div></div>
+                <div class="setting-item" onclick="showScreen('battery-screen')"><div class="setting-icon-box">🔋</div><div><b>Last Breath Protocol</b><br><small style="opacity:0.5">Emergency broadcast on low battery</small></div></div>
+                <p style="color: var(--neon-purple); font-size: 14px; font-weight: bold; margin-top: 24px; margin-bottom: 8px;">Data & Vault</p>
+                <div class="setting-item" onclick="loadVault()"><div class="setting-icon-box">📂</div><div><b>Evidence Vault</b><br><small style="opacity:0.5">Securely stored voice and logs</small></div></div>
+                <div class="setting-item" onclick="handleLogout()" style="margin-top:40px; border-color: rgba(255,0,0,0.3); color: var(--red-sos);"><div class="setting-icon-box" style="background: rgba(255,0,0,0.1); color: var(--red-sos);">🚪</div><b>Logout Account</b></div>
             </div>
         </div>
 
-        <!-- MAP -->
+        <!-- SCREEN 6: PROFILE -->
+        <div id="profile-screen" class="screen">
+            <div class="back-row">
+                <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
+                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Edit Profile</h2>
+            </div>
+            <div class="avatar-section">
+                <div class="avatar-circle"><div style="font-size: 64px; color: var(--neon-blue);">👤</div></div>
+                <div class="camera-fab">📷</div>
+            </div>
+            <input type="text" id="prof-name" placeholder="Full Name" style="margin-bottom:12px;">
+            <input type="email" id="prof-email" placeholder="Email Address" disabled style="background: rgba(255,255,255,0.1); color: gray; margin-bottom:12px;">
+            <input type="text" id="prof-phone" placeholder="Phone Number" style="margin-bottom:12px;">
+            <input type="text" id="prof-dob" placeholder="Date of Birth" style="margin-bottom:12px;">
+            <input type="text" id="prof-addr" placeholder="Home Address" style="margin-bottom:12px;">
+            <button class="btn-gradient" style="margin-top: 48px;" onclick="saveProfile()">Update Profile</button>
+        </div>
+
+        <!-- SCREEN 7: MAP -->
         <div id="track-screen" class="screen" style="padding: 0;">
-            <div class="map-header"><button class="back-btn" onclick="showScreen('home-screen')">←</button><div style="margin-left: 16px;">Live Tracking</div></div>
+            <div class="map-header"><button class="back-btn" onclick="showScreen('home-screen')">←</button><div style="margin-left: 16px; font-weight: bold;">Live GPS Tracking</div></div>
             <div id="map"></div>
         </div>
 
-        <!-- HISTORY -->
+        <!-- SCREEN 8: HISTORY -->
         <div id="history-screen" class="screen">
-            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('home-screen')">←</button><h2>History</h2></div>
-            <div id="history-list" style="width:100%;"></div>
+            <div class="back-row">
+                <button class="back-btn" onclick="showScreen('home-screen')">←</button>
+                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Travel History</h2>
+            </div>
+            <div id="history-list" style="width: 100%;"></div>
         </div>
 
-        <!-- VAULT -->
+        <!-- SCREEN 9: VAULT -->
         <div id="vault-screen" class="screen">
-            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('home-screen')">←</button><h2>Evidence Vault</h2></div>
-            <div id="vault-list" style="width:100%;"></div>
+            <div class="back-row">
+                <button class="back-btn" onclick="showScreen('home-screen')">←</button>
+                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Voice Recordings</h2>
+            </div>
+            <div id="vault-list" style="width: 100%;"></div>
         </div>
 
-        <!-- FAKE CALL -->
+        <!-- SCREEN 10: CONTACTS -->
+        <div id="contacts-screen" class="screen">
+            <div class="back-row">
+                <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
+                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Emergency Circle</h2>
+            </div>
+            <p style="opacity:0.6; text-align:center;">Manage your trusted emergency contacts here.</p>
+        </div>
+
+        <!-- SCREEN 11: HARDWARE -->
+        <div id="hardware-screen" class="screen">
+            <div class="back-row">
+                <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
+                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Hardware Triggers</h2>
+            </div>
+            <p style="opacity:0.6; text-align:center;">Configure silent SOS via physical buttons.</p>
+        </div>
+
+        <!-- SCREEN 12: BATTERY -->
+        <div id="battery-screen" class="screen">
+            <div class="back-row">
+                <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
+                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Last Breath</h2>
+            </div>
+            <p style="opacity:0.6; text-align:center;">Emergency broadcast on low battery settings.</p>
+        </div>
+
+        <!-- SCREEN 13: SOS COUNTDOWN -->
+        <div id="sos-screen" class="screen" style="background: #240000; justify-content: center;">
+            <h1 style="color: var(--red-sos); font-size: 40px; font-weight: 900;">EMERGENCY</h1>
+            <div id="sos-timer" style="font-size: 120px; font-weight: 900; margin: 40px 0;">5</div>
+            <button class="btn-gradient" style="background: white; color: black;" onclick="cancelSOS()">CANCEL SOS</button>
+        </div>
+
+        <!-- SCREEN 14: FAKE CALL -->
         <div id="fake-call-screen" class="screen" style="background: black; justify-content: center;">
-            <div style="font-size: 24px; margin-bottom: 20px;">SafeWatch Protection</div>
+            <div style="font-size: 24px; margin-bottom: 20px; opacity: 0.7;">SafeWatch Protection</div>
             <div style="font-size: 40px; font-weight: bold;">+1 (555) 012-9432</div>
             <div style="margin-top: 100px; display: flex; gap: 80px;">
-                <div onclick="showScreen('home-screen')" style="background: red; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;">📞</div>
-                <div onclick="showScreen('home-screen')" style="background: green; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;">📞</div>
+                <div onclick="showScreen('home-screen')" style="background: #FF3B30; width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,0,0.4);">📞</div>
+                <div onclick="showScreen('home-screen')" style="background: #34C759; width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); animation: pulse 2s infinite;">📞</div>
             </div>
         </div>
     </div>
@@ -229,45 +396,135 @@
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null, map, marker, sosInterval;
+        let onbIndex = 0;
+        const onboardingData = [
+            { title: "Live GPS Tracking", desc: "Share your real-time location with your trusted emergency circle.", icon: "📍", color: "#00F2FF" },
+            { title: "Safety Check-in", desc: "Set a timer and let SafeWatch alert your family if you don't check in.", icon: "🕒", color: "#BD00FF" },
+            { title: "Instant SOS", desc: "One tap to broadcast an emergency alert with your live path.", icon: "⚠️", color: "#FF4B4B" }
+        ];
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            const target = document.getElementById(id);
+            if(target) target.classList.add('active');
             if (id === 'track-screen') setTimeout(() => map && map.invalidateSize(), 500);
         }
 
         async function checkUser() {
-            const { data: { session } } = await client.auth.getSession();
-            setTimeout(() => {
+            try {
+                const { data: { session } } = await client.auth.getSession();
+                setTimeout(() => {
+                    document.getElementById('splash-screen').style.display = 'none';
+
+                    const params = new URLSearchParams(window.location.search);
+                    const guardianId = params.get('id');
+
+                    if (guardianId) {
+                        // Bypass everything for Emergency Guardian link
+                        showScreen('track-screen');
+                        initTracking(guardianId);
+                        return;
+                    }
+
+                    if (session) {
+                        currentUser = session.user;
+                        fetchProfile();
+                        showScreen('home-screen');
+                    } else {
+                        const hasSeenOnboarding = localStorage.getItem('onboarding_done');
+                        if(hasSeenOnboarding) {
+                            showScreen('login-screen');
+                        } else {
+                            onbIndex = 0;
+                            updateOnboarding();
+                            showScreen('onboarding-screen');
+                        }
+                    }
+                }, 1000); // reduced to 1 second
+            } catch (err) {
+                console.error("Auth init error:", err);
                 document.getElementById('splash-screen').style.display = 'none';
-                if (session) { currentUser = session.user; fetchProfile(); showScreen('home-screen'); } else showScreen('login-screen');
-            }, 2000);
+                showScreen('login-screen');
+            }
         }
         checkUser();
 
+        function nextOnboarding() {
+            onbIndex++;
+            if (onbIndex >= onboardingData.length) {
+                localStorage.setItem('onboarding_done', 'true');
+                showScreen('login-screen');
+                return;
+            }
+            updateOnboarding();
+        }
+
+        function updateOnboarding() {
+            const data = onboardingData[onbIndex];
+            document.getElementById('onb-title').innerText = data.title;
+            document.getElementById('onb-desc').innerText = data.desc;
+            document.getElementById('onb-icon').innerText = data.icon;
+            document.getElementById('onb-glow').style.background = data.color;
+            document.getElementById('onb-btn').style.background = data.color;
+            document.getElementById('onb-btn').innerText = (onbIndex === 2) ? "Get Started" : "Continue";
+
+            document.querySelectorAll('.indicator').forEach((ind, i) => {
+                ind.className = (i === onbIndex) ? "indicator active-ind" : "indicator inactive-ind";
+                if(i === onbIndex) ind.style.background = data.color; else ind.style.background = "rgba(255,255,255,0.2)";
+            });
+        }
+
         async function handleLogin() {
-            const { error } = await client.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-pass').value });
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            if(!email || !pass) { alert("Please enter credentials"); return; }
+
+            const { error } = await client.auth.signInWithPassword({ email, password: pass });
             if (error) alert(error.message); else location.reload();
         }
 
         async function handleSignup() {
-            const { error } = await client.auth.signUp({ email: document.getElementById('reg-email').value, password: document.getElementById('reg-pass').value, options: { data: { full_name: document.getElementById('reg-name').value } } });
-            if (error) alert(error.message); else alert("Check email!");
+            const { error } = await client.auth.signUp({
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-pass').value,
+                options: { data: { full_name: document.getElementById('reg-name').value } }
+            });
+            if (error) alert(error.message); else alert("Check email for verification!");
         }
 
         async function handleLogout() { await client.auth.signOut(); location.reload(); }
 
+        function togglePassword(id, el) {
+            const input = document.getElementById(id);
+            if (input.type === "password") {
+                input.type = "text";
+                el.innerText = "👁️‍🗨️";
+            } else {
+                input.type = "password";
+                el.innerText = "👁️";
+            }
+        }
+
         async function fetchProfile() {
             const { data } = await client.from('users').select('*').eq('id', currentUser.id).single();
             if (data) {
-                document.getElementById('user-greeting').innerText = "Hello, " + (data.full_name ? data.full_name.split(' ')[0] : "User");
                 document.getElementById('prof-name').value = data.full_name || "";
+                document.getElementById('prof-email').value = currentUser.email || "";
                 document.getElementById('prof-phone').value = data.phone || "";
+                document.getElementById('prof-dob').value = data.dob || "";
+                document.getElementById('prof-addr').value = data.home_address || "";
             }
         }
 
         async function saveProfile() {
-            await client.from('users').upsert({ id: currentUser.id, full_name: document.getElementById('prof-name').value, phone: document.getElementById('prof-phone').value, updated_at: new Date() });
+            await client.from('users').upsert({
+                id: currentUser.id,
+                full_name: document.getElementById('prof-name').value,
+                phone: document.getElementById('prof-phone').value,
+                dob: document.getElementById('prof-dob').value,
+                home_address: document.getElementById('prof-addr').value,
+                updated_at: new Date()
+            });
             alert("Profile Saved!");
         }
 
@@ -290,14 +547,21 @@
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([0,0], 2);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             marker = L.marker([0,0]).addTo(map);
-            client.from('user_locations').select('*').eq('user_id', userId).single().then(r => { if(r.data) updateMap(r.data.latitude, r.data.longitude); });
+            client.from('user_locations').select('*').eq('user_id', userId).single().then(r => {
+                if(r.data) {
+                    updateMap(r.data.latitude, r.data.longitude);
+                    if(document.getElementById('home-gps')) {
+                        document.getElementById('home-gps').innerText = `GPS: ${r.data.latitude.toFixed(4)}, ${r.data.longitude.toFixed(4)}`;
+                    }
+                }
+            });
         }
         function updateMap(lat, lng) { marker.setLatLng([lat, lng]); map.setView([lat, lng], 16); }
 
         async function loadHistory() {
             showScreen('history-screen');
             const { data } = await client.from('location_history').select('*').eq('user_id', currentUser.id).order('captured_at', {ascending:false}).limit(10);
-            document.getElementById('history-list').innerHTML = data.map(i => `
+            document.getElementById('history-list').innerHTML = (data || []).map(i => `
                 <div class='setting-item' style='justify-content:space-between;'>
                     <div><b>Logged Position</b><br><small style='opacity:0.6;'>${i.captured_at.substring(0,16).replace('T',' ')}</small></div>
                     <div style='color:var(--neon-blue)'>📍</div>
@@ -307,7 +571,7 @@
         async function loadVault() {
             showScreen('vault-screen');
             const { data } = await client.from('evidence_vault').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false});
-            document.getElementById('vault-list').innerHTML = data.map(i => `
+            document.getElementById('vault-list').innerHTML = (data || []).map(i => `
                 <div class='setting-item' style='justify-content:space-between;'>
                     <div><b>${i.file_name}</b><br><small style='opacity:0.6;'>${i.created_at.substring(0,10)}</small></div>
                     <button class='btn-gradient' style='width:auto;margin:0;padding:8px 16px;border-radius:12px;font-size:12px;' onclick="window.open('${SUPABASE_URL}/storage/v1/object/public/voice-recordings/${i.storage_path}')">PLAY</button>
