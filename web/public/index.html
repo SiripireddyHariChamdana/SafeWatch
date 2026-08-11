@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>SafeWatch | Digital Doppelganger</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --dark-navy: #0A0E21;
+            --card-navy: #161B33;
+            --neon-blue: #00F2FF;
+            --neon-purple: #BD00FF;
+            --red-sos: #FF4B4B;
+            --success-green: #4CAF50;
+            --text-gray: #B0B0B0;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
+        body {
+            margin: 0; padding: 0;
+            background: var(--dark-navy);
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            color: white;
+            overflow-x: hidden;
+            display: flex; justify-content: center;
+        }
+
+        /* Container for Desktop centering */
+        .app-container {
+            width: 100%; max-width: 500px; min-height: 100vh;
+            position: relative; background: var(--dark-navy);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .screen {
+            display: none; min-height: 100vh; width: 100%;
+            flex-direction: column; padding: 24px;
+            animation: fadeIn 0.4s ease-out; align-items: center;
+        }
+        .active { display: flex; }
+
+        /* SPLASH */
+        #splash-screen {
+            background: var(--dark-navy); justify-content: center; align-items: center;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+        }
+        .splash-card {
+            width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            animation: scaleIn 0.8s ease-out;
+        }
+        .shield-icon {
+            width: 60px; height: 60px; background: var(--neon-blue);
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'/%3E%3C/svg%3E") no-repeat center;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'/%3E%3C/svg%3E") no-repeat center;
+        }
+
+        /* AUTH */
+        .card {
+            background: var(--card-navy); padding: 32px; border-radius: 28px; width: 100%;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        input {
+            width: 100%; padding: 18px; margin: 8px 0; border-radius: 16px; border: none;
+            background: white; color: black; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn-gradient {
+            width: 100%; padding: 18px; border-radius: 28px; border: none;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+            color: white; font-weight: bold; cursor: pointer; margin-top: 16px;
+            font-size: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        /* SOS BUTTON */
+        .sos-outer {
+            width: 200px; height: 200px; border-radius: 50%; background: rgba(255, 0, 0, 0.1);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 32px 0;
+        }
+        .sos-inner {
+            width: 160px; height: 160px; border-radius: 50%; background: var(--red-sos);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
+        }
+
+        /* GRID */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 20px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* SETTINGS & LISTS */
+        .setting-item {
+            background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 20px;
+            margin-bottom: 12px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
+        }
+        .setting-icon-box {
+            width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, 0.05);
+            display: flex; align-items: center; justify-content: center; margin-right: 16px;
+        }
+
+        /* MAP */
+        #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; }
+        .map-header { position: absolute; top: 0; left: 0; width: 100%; z-index: 1000; padding: 16px; display: flex; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        .back-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="splash-screen">
+            <div class="splash-card"><div class="shield-icon"></div></div>
+            <div style="margin-top: 24px; font-size: 32px; font-weight: bold;">ShadowGuard</div>
+            <div style="color: var(--neon-blue); font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-top: 8px;">YOUR DIGITAL SHIELD</div>
+        </div>
+
+        <!-- LOGIN -->
+        <div id="login-screen" class="screen">
+            <div class="splash-card" style="margin-top: 48px;"><div class="shield-icon"></div></div>
+            <h1 style="font-size: 28px; font-weight: bold; margin-top: 24px;">SafeWatch Login</h1>
+            <p style="color: rgba(255,255,255,0.6); margin-bottom: 48px;">Login with Email or Phone</p>
+            <div class="card">
+                <input type="email" id="login-email" placeholder="Email or Phone Number">
+                <input type="password" id="login-pass" placeholder="Password">
+                <button class="btn-gradient" onclick="handleLogin()">Login to SafeWatch</button>
+                <p style="margin-top: 32px; font-size: 14px;">New? <span style="color: var(--neon-blue); cursor: pointer;" onclick="showScreen('signup-screen')">Sign Up</span></p>
+            </div>
+        </div>
+
+        <!-- SIGNUP -->
+        <div id="signup-screen" class="screen">
+            <div class="splash-card" style="margin-top: 48px;"><div class="shield-icon"></div></div>
+            <h1 style="font-size: 28px; font-weight: bold; margin-top: 24px;">Create Account</h1>
+            <div class="card">
+                <input type="text" id="reg-name" placeholder="Full Name">
+                <input type="email" id="reg-email" placeholder="Email Address">
+                <input type="password" id="reg-pass" placeholder="Password">
+                <button class="btn-gradient" onclick="handleSignup()">Register</button>
+                <p onclick="showScreen('login-screen')" style="margin-top:20px; cursor:pointer;">Back to Login</p>
+            </div>
+        </div>
+
+        <!-- HOME -->
+        <div id="home-screen" class="screen">
+            <div style="display:flex; justify-content: space-between; width:100%; margin-top:40px;">
+                <div><div id="user-greeting" style="font-size: 24px; font-weight: bold;">Hello, User</div><div style="color: var(--neon-blue); font-size: 12px; font-weight: bold;">Protection Active</div></div>
+                <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="showScreen('settings-screen')">⚙️</div>
+            </div>
+
+            <div class="sos-outer" onclick="startSOSFlow()">
+                <div class="sos-inner">
+                    <div style="font-size: 48px;">📡</div>
+                    <div style="font-size: 28px; font-weight: 900;">SOS</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="feature-card" style="border-color: rgba(0,242,255,0.2)" onclick="showScreen('track-screen'); initTracking(currentUser.id);"><div style="font-size: 32px; color: var(--neon-blue);">📍</div><b>Live GPS</b></div>
+                <div class="feature-card" style="border-color: rgba(189,0,255,0.2)" onclick="alert('Timer Active')"><div style="font-size: 32px; color: var(--neon-purple);">🕒</div><b>Safety Timer</b></div>
+                <div class="feature-card" style="border-color: rgba(255,255,255,0.2)" onclick="loadHistory()"><div style="font-size: 32px; color: gray;">📜</div><b>History</b></div>
+                <div class="feature-card" style="border-color: rgba(76,175,80,0.2)" onclick="loadVault()"><div style="font-size: 32px; color: var(--success-green);">🎙️</div><b>Vault</b></div>
+            </div>
+            <div class="feature-card" style="width: 100%; margin-top: 16px;" onclick="showFakeCall()">📞 Fake Call</div>
+        </div>
+
+        <!-- SOS COUNTDOWN -->
+        <div id="sos-screen" class="screen" style="background: #240000; justify-content: center;">
+            <h1 style="color: var(--red-sos); font-size: 40px;">EMERGENCY</h1>
+            <div id="sos-timer" style="font-size: 120px; font-weight: 900;">5</div>
+            <button class="btn-gradient" style="background: white; color: black;" onclick="cancelSOS()">CANCEL SOS</button>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="settings-screen" class="screen">
+            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('home-screen')">←</button><h2>Settings</h2></div>
+            <div class="setting-item" onclick="showScreen('profile-screen')"><div class="setting-icon-box">👤</div><b>User Profile</b></div>
+            <div class="setting-item" onclick="openContacts()"><div class="setting-icon-box">👥</div><b>Emergency Circle</b></div>
+            <div class="setting-item" onclick="handleLogout()" style="margin-top:40px; border-color: rgba(255,0,0,0.3); color: var(--red-sos);"><b>Logout</b></div>
+        </div>
+
+        <!-- PROFILE -->
+        <div id="profile-screen" class="screen">
+            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('settings-screen')">←</button><h2>Profile</h2></div>
+            <div class="card">
+                <input type="text" id="prof-name" placeholder="Full Name">
+                <input type="text" id="prof-phone" placeholder="Phone">
+                <button class="btn-gradient" onclick="saveProfile()">Update Profile</button>
+            </div>
+        </div>
+
+        <!-- MAP -->
+        <div id="track-screen" class="screen" style="padding: 0;">
+            <div class="map-header"><button class="back-btn" onclick="showScreen('home-screen')">←</button><div style="margin-left: 16px;">Live Tracking</div></div>
+            <div id="map"></div>
+        </div>
+
+        <!-- HISTORY -->
+        <div id="history-screen" class="screen">
+            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('home-screen')">←</button><h2>History</h2></div>
+            <div id="history-list" style="width:100%;"></div>
+        </div>
+
+        <!-- VAULT -->
+        <div id="vault-screen" class="screen">
+            <div style="display:flex; align-items:center; margin: 32px 0;"><button class="back-btn" onclick="showScreen('home-screen')">←</button><h2>Evidence Vault</h2></div>
+            <div id="vault-list" style="width:100%;"></div>
+        </div>
+
+        <!-- FAKE CALL -->
+        <div id="fake-call-screen" class="screen" style="background: black; justify-content: center;">
+            <div style="font-size: 24px; margin-bottom: 20px;">SafeWatch Protection</div>
+            <div style="font-size: 40px; font-weight: bold;">+1 (555) 012-9432</div>
+            <div style="margin-top: 100px; display: flex; gap: 80px;">
+                <div onclick="showScreen('home-screen')" style="background: red; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;">📞</div>
+                <div onclick="showScreen('home-screen')" style="background: green; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px;">📞</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://mdszyqabsljbrjfcimss.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kc3p5cWFic2xqYnJqZmNpbXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwMDMwMzMsImV4cCI6MjEwMTU3OTAzM30.g_xrYF9H5xo3wYXBFKPwdnNdn4lNPCNkjeWbwZuKNBM";
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null, map, marker, sosInterval;
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (id === 'track-screen') setTimeout(() => map && map.invalidateSize(), 500);
+        }
+
+        async function checkUser() {
+            const { data: { session } } = await client.auth.getSession();
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.display = 'none';
+                if (session) { currentUser = session.user; fetchProfile(); showScreen('home-screen'); } else showScreen('login-screen');
+            }, 2000);
+        }
+        checkUser();
+
+        async function handleLogin() {
+            const { error } = await client.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-pass').value });
+            if (error) alert(error.message); else location.reload();
+        }
+
+        async function handleSignup() {
+            const { error } = await client.auth.signUp({ email: document.getElementById('reg-email').value, password: document.getElementById('reg-pass').value, options: { data: { full_name: document.getElementById('reg-name').value } } });
+            if (error) alert(error.message); else alert("Check email!");
+        }
+
+        async function handleLogout() { await client.auth.signOut(); location.reload(); }
+
+        async function fetchProfile() {
+            const { data } = await client.from('users').select('*').eq('id', currentUser.id).single();
+            if (data) {
+                document.getElementById('user-greeting').innerText = "Hello, " + (data.full_name ? data.full_name.split(' ')[0] : "User");
+                document.getElementById('prof-name').value = data.full_name || "";
+                document.getElementById('prof-phone').value = data.phone || "";
+            }
+        }
+
+        async function saveProfile() {
+            await client.from('users').upsert({ id: currentUser.id, full_name: document.getElementById('prof-name').value, phone: document.getElementById('prof-phone').value, updated_at: new Date() });
+            alert("Profile Saved!");
+        }
+
+        function startSOSFlow() {
+            showScreen('sos-screen'); let count = 5;
+            document.getElementById('sos-timer').innerText = count;
+            sosInterval = setInterval(async () => {
+                count--; document.getElementById('sos-timer').innerText = count;
+                if (count <= 0) {
+                    clearInterval(sosInterval);
+                    await client.from('sos_alerts').insert({ user_id: currentUser.id, trigger_type: 'WEB_SOS', status: 'ACTIVE' });
+                    alert("SOS SENT!"); showScreen('home-screen');
+                }
+            }, 1000);
+        }
+        function cancelSOS() { clearInterval(sosInterval); showScreen('home-screen'); }
+
+        function initTracking(userId) {
+            if (map) return;
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([0,0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            marker = L.marker([0,0]).addTo(map);
+            client.from('user_locations').select('*').eq('user_id', userId).single().then(r => { if(r.data) updateMap(r.data.latitude, r.data.longitude); });
+        }
+        function updateMap(lat, lng) { marker.setLatLng([lat, lng]); map.setView([lat, lng], 16); }
+
+        async function loadHistory() {
+            showScreen('history-screen');
+            const { data } = await client.from('location_history').select('*').eq('user_id', currentUser.id).order('captured_at', {ascending:false}).limit(10);
+            document.getElementById('history-list').innerHTML = data.map(i => `
+                <div class='setting-item' style='justify-content:space-between;'>
+                    <div><b>Logged Position</b><br><small style='opacity:0.6;'>${i.captured_at.substring(0,16).replace('T',' ')}</small></div>
+                    <div style='color:var(--neon-blue)'>📍</div>
+                </div>`).join('');
+        }
+
+        async function loadVault() {
+            showScreen('vault-screen');
+            const { data } = await client.from('evidence_vault').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false});
+            document.getElementById('vault-list').innerHTML = data.map(i => `
+                <div class='setting-item' style='justify-content:space-between;'>
+                    <div><b>${i.file_name}</b><br><small style='opacity:0.6;'>${i.created_at.substring(0,10)}</small></div>
+                    <button class='btn-gradient' style='width:auto;margin:0;padding:8px 16px;border-radius:12px;font-size:12px;' onclick="window.open('${SUPABASE_URL}/storage/v1/object/public/voice-recordings/${i.storage_path}')">PLAY</button>
+                </div>`).join('');
+        }
+
+        function showFakeCall() { showScreen('fake-call-screen'); }
+    </script>
+</body>
+</html>

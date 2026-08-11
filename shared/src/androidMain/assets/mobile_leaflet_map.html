@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; background-color: #0B0E14; overflow: hidden; }
+        #map { height: 100vh; width: 100vw; background: #0B0E14; }
+        /* Pulse for user location */
+        .user-pulse {
+            width: 14px; height: 14px; background: #007AFF;
+            border: 2px solid white; border-radius: 50%;
+            box-shadow: 0 0 10px #007AFF, 0 0 20px #007AFF;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(0.9); opacity: 0; } }
+
+        #overlay {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            color: #007AFF; font-family: monospace; font-size: 10px;
+            background: rgba(0,0,0,0.6); padding: 5px; border-radius: 4px;
+            border: 1px solid rgba(0,122,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">MAP ENGINE: BOOTING...</div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var map;
+        var marker;
+        var circle;
+        var ready = false;
+
+        function updateStatus(txt) {
+            document.getElementById('overlay').innerText = "ENGINE: " + txt;
+        }
+
+        function init() {
+            if (ready) return;
+            if (typeof L === 'undefined') {
+                updateStatus("RETRYING LIB...");
+                setTimeout(init, 1000);
+                return;
+            }
+
+            try {
+                map = L.map('map', { zoomControl: false, attributionControl: false }).setView([0, 0], 2);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(map);
+
+                marker = L.marker([0, 0], {
+                    icon: L.divIcon({ className: 'user-icon', html: '<div class="user-pulse"></div>', iconSize: [20, 20], iconAnchor: [10, 10] })
+                }).addTo(map);
+
+                circle = L.circle([0, 0], { radius: 0, color: '#007AFF', weight: 1, fillOpacity: 0.1 }).addTo(map);
+
+                ready = true;
+                updateStatus("READY - WAITING GPS");
+                setTimeout(function() { map.invalidateSize(); }, 500);
+            } catch (e) {
+                updateStatus("CRASH: " + e.message);
+            }
+        }
+
+        function updateLocation(lat, lng, accuracy) {
+            if (!ready) {
+                init();
+                return;
+            }
+            var loc = [lat, lng];
+            marker.setLatLng(loc);
+            circle.setLatLng(loc);
+            circle.setRadius(accuracy || 0);
+            map.setView(loc, 16);
+            updateStatus("SIGNAL ACTIVE");
+        }
+
+        window.onload = init;
+        setTimeout(init, 500); // Faster backup
+    </script>
+</body>
+</html>

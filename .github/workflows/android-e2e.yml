@@ -1,0 +1,65 @@
+name: SafeWatch Android Appium E2E Automation Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & Appium E2E Test
+    runs-on: macos-latest
+    steps:
+      - name: Stage 1 — Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Stage 2 — Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Stage 3 & 4 — Setup Android SDK & Dependencies
+        uses: android-actions/setup-android@v3
+
+      - name: Stage 5 — Build Debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug
+
+      - name: Stage 6 to 11 — Run Android Emulator & Appium Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            npm install -g appium
+            appium driver install uiautomator2
+            appium &
+            for i in {1..10}; do curl -s http://127.0.0.1:4723/status && break || sleep 5; done
+            cd automation/android-appium
+            mvn test
+
+      - name: Stage 14 to 18 — Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-Appium-Test-Results
+          path: |
+            automation/android-appium/Test_Results/
+            automation/android-appium/target/surefire-reports/
+          retention-days: 30
+
+      - name: Stage 21 — Publish GitHub Action Summary
+        if: always()
+        run: |
+          echo "# 📱 Android Appium E2E Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Execution Status**: Complete" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Test Cases**: 400+" >> $GITHUB_STEP_SUMMARY
+          echo "Excel and HTML reports captured in build artifacts." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>SafeWatch Mobile Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { padding: 0; margin: 0; background-color: #0B0E14; height: 100vh; width: 100vw; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #007AFF; font-family: sans-serif; }
+        #map { position: absolute; top: 0; left: 0; height: 100%; width: 100%; background: #0B0E14; z-index: 1; visibility: hidden; }
+        #status-box { z-index: 2; text-align: center; background: rgba(11, 14, 20, 0.9); padding: 20px; border-radius: 12px; border: 1px solid #007AFF; }
+        .user-icon { background-color: #007AFF; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(0,122,255,0.8); }
+    </style>
+</head>
+<body>
+    <div id="status-box">
+        <div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">ShadowGuard GPS</div>
+        <div id="status-text">Synchronizing Satellites...</div>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var map;
+        var marker;
+        var circle;
+        var engineReady = false;
+        var lastLocation = null;
+
+        function setStatus(text) {
+            document.getElementById('status-text').innerText = text;
+        }
+
+        function initMap() {
+            if (engineReady) return;
+
+            if (typeof L === 'undefined') {
+                setStatus("Loading Engine...");
+                setTimeout(initMap, 500);
+                return;
+            }
+
+            try {
+                map = L.map('map', {
+                    zoomControl: false,
+                    attributionControl: false,
+                    fadeAnimation: true
+                }).setView([0, 0], 2);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19
+                }).addTo(map);
+
+                marker = L.marker([0, 0], {
+                    icon: L.divIcon({
+                        className: 'user-icon',
+                        iconSize: [18, 18],
+                        iconAnchor: [9, 9]
+                    })
+                }).addTo(map);
+
+                circle = L.circle([0, 0], {
+                    radius: 0,
+                    color: '#007AFF',
+                    fillColor: '#007AFF',
+                    fillOpacity: 0.15,
+                    weight: 1
+                }).addTo(map);
+
+                engineReady = true;
+                document.getElementById('map').style.visibility = 'visible';
+                document.getElementById('status-box').style.display = 'none';
+
+                if (lastLocation) {
+                    updateLocation(lastLocation.lat, lastLocation.lng, lastLocation.acc);
+                }
+
+                setTimeout(function() { map.invalidateSize(); }, 400);
+            } catch (e) {
+                setStatus("Engine Error: " + e.message);
+            }
+        }
+
+        function updateLocation(lat, lng, accuracy) {
+            lastLocation = {lat: lat, lng: lng, acc: accuracy};
+            if (!engineReady || !map) {
+                initMap();
+                return;
+            }
+
+            var loc = [lat, lng];
+            marker.setLatLng(loc);
+            circle.setLatLng(loc);
+            circle.setRadius(accuracy || 0);
+            map.setView(loc, 16);
+            map.invalidateSize();
+        }
+
+        // Auto-start
+        setTimeout(initMap, 100);
+    </script>
+</body>
+</html>

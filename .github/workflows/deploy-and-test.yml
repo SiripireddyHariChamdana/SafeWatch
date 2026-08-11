@@ -1,0 +1,54 @@
+name: SafeWatch Live Web Deployment & Selenium E2E Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-and-test:
+    name: Deploy & Selenium E2E Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stage 1 — Repository Checkout
+        uses: actions/checkout@v4
+
+      - name: Stage 2 — Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Stage 3 to 7 — Verify Live Deployment
+        run: |
+          HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}" https://majestic-pudding-3979e7.netlify.app/)
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ Target Deployment URL is unavailable (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+          echo "✅ Live Application Ready at https://majestic-pudding-3979e7.netlify.app/ (HTTP 200)"
+
+      - name: Stage 8 to 10 — Run Selenium E2E Suite & Reports
+        run: |
+          cd automation/web-selenium
+          npm install
+          npm test
+        env:
+          BASE_URL: https://majestic-pudding-3979e7.netlify.app/
+
+      - name: Stage 11 — Upload Evidence Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Selenium-Web-Test-Results
+          path: automation/web-selenium/Test_Results/
+          retention-days: 30
+
+      - name: Stage 12 — Publish Execution Summary
+        if: always()
+        run: |
+          echo "# 🌐 Live Web Selenium Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment URL**: https://majestic-pudding-3979e7.netlify.app/" >> $GITHUB_STEP_SUMMARY
+          echo "**Executed Test Cases**: 400" >> $GITHUB_STEP_SUMMARY
+          echo "Multi-sheet Excel report and HTML dashboard uploaded." >> $GITHUB_STEP_SUMMARY

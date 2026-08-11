@@ -1,0 +1,47 @@
+# IDE
+.idea/
+*.iml
+*.iws
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+
+# Gradle
+.gradle/
+build/
+*/build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# Android
+local.properties
+.externalNativeBuild
+.cxx/
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+
+# Kotlin
+.kotlin/
+.apple/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+google-services.json
+google-services.xml
+*secret*
+*key*
+*.jks
+*.keystore

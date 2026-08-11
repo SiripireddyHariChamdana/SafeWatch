@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>SafeWatch Dashboard</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { margin: 0; background: #0B0E14; font-family: sans-serif; color: white; }
+        #map { height: 100vh; width: 100%; }
+        .card { position: absolute; top: 20px; left: 20px; z-index: 1000; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 8px; border: 1px solid #007AFF; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="margin:0; color:#007AFF;">SAFEWATCH LIVE</h2>
+        <p id="status">Waiting for user...</p>
+    </div>
+    <div id="map"></div>
+    <script>
+        const SUPABASE_URL = "https://mdszyqabsljbrjfcimss.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kc3p5cWFic2xqYnJqZmNpbXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwMDMwMzMsImV4cCI6MjEwMTU3OTAzM30.g_xrYF9H5xo3wYXBFKPwdnNdn4lNPCNkjeWbwZuKNBM";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        var marker = L.marker([0, 0]).addTo(map);
+
+        const userId = new URLSearchParams(window.location.search).get('id');
+        if (userId) {
+            supabase.channel('live').on('postgres_changes', { event: '*', schema: 'public', table: 'user_locations', filter: 'user_id=eq.' + userId },
+            payload => {
+                const { latitude, longitude } = payload.new;
+                marker.setLatLng([latitude, longitude]);
+                map.panTo([latitude, longitude]);
+                document.getElementById('status').innerText = "Last Update: " + new Date().toLocaleTimeString();
+            }).subscribe();
+        }
+    </script>
+</body>
+</html>
