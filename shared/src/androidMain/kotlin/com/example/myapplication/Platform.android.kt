@@ -231,12 +231,15 @@ class AndroidPlatform(private val context: Context) : Platform {
                 mediaPlayer.setAudioAttributes(
                     android.media.AudioAttributes.Builder()
                         .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
             }
             
-            mediaPlayer.setDataSource(url)
+            // Log the URL to verify apikey query param
+            println("🔊 Audio: Opening Stream URL...")
+            
+            mediaPlayer.setDataSource(context, Uri.parse(url))
             
             mediaPlayer.setOnPreparedListener { 
                 println("PLAYBACK_STARTED")
@@ -244,7 +247,9 @@ class AndroidPlatform(private val context: Context) : Platform {
             }
             
             mediaPlayer.setOnErrorListener { mp, what, extra ->
-                println("PLAYBACK_FAILED: Error code ($what, $extra)")
+                println("PLAYBACK_FAILED: MediaPlayer Error (What: $what, Extra: $extra)")
+                // common what: 1 (MEDIA_ERROR_UNKNOWN), 100 (MEDIA_ERROR_SERVER_DIED)
+                // common extra: -1004 (MEDIA_ERROR_IO), -1007 (MEDIA_ERROR_MALFORMED)
                 mp.release()
                 true
             }
@@ -254,10 +259,10 @@ class AndroidPlatform(private val context: Context) : Platform {
                 it.release() 
             }
             
-            println("🔊 Audio: Preparing stream...")
             mediaPlayer.prepareAsync()
         } catch (e: Exception) {
-            println("PLAYBACK_FAILED: ${e.message}")
+            println("PLAYBACK_FAILED: Exception ${e.message}")
+            e.printStackTrace()
         }
     }
 

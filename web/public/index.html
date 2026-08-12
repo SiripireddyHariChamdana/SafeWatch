@@ -3,18 +3,20 @@
 <head>
     <title>SafeWatch | Digital Doppelganger</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --dark-navy: #0B101B;
-            --card-bg: rgba(255, 255, 255, 0.05);
+            --dark-navy: #0A0E21;
+            --card-navy: #161B33;
             --neon-blue: #00F2FF;
             --neon-purple: #BD00FF;
             --red-sos: #FF4B4B;
             --success-green: #4CAF50;
+            --warning-orange: #FF9800;
             --text-gray: rgba(255, 255, 255, 0.6);
             --input-bg: #FFFFFF;
         }
@@ -24,37 +26,41 @@
         body {
             margin: 0; padding: 0;
             background: var(--dark-navy);
-            font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+            font-family: 'Inter', 'Roboto', sans-serif;
             color: white;
-            overflow-x: hidden;
+            overflow: hidden;
             display: flex; justify-content: center;
-            height: 100vh;
+            height: 100vh; width: 100vw;
         }
 
-        /* Centered Mobile Aesthetic Container */
+        /* MASTER CONTAINER */
         .app-container {
-            width: 100%; max-width: 500px; min-height: 100vh;
-            position: relative; background: radial-gradient(circle at top, #111827 0%, #0B101B 100%);
+            width: 100%; height: 100vh;
+            position: relative;
+            background: radial-gradient(circle at top, #111827 0%, #0A0E21 100%);
             display: flex; flex-direction: column;
             background-image:
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
             background-size: 30px 30px;
+            overflow-y: auto;
+            scrollbar-width: none;
+            align-items: center;
         }
+        .app-container::-webkit-scrollbar { display: none; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         .screen {
-            display: none; min-height: 100vh; width: 100%;
-            flex-direction: column; padding: 20px;
+            display: none; min-height: 100%; width: 100%;
+            flex-direction: column; padding: 24px;
             animation: fadeIn 0.4s ease-out;
-            flex-grow: 1;
             align-items: center;
         }
         .active { display: flex; }
 
-        /* SPLASH */
+        /* SPLASH SCREEN */
         #splash-screen {
             background: var(--dark-navy); display: flex; justify-content: center; align-items: center;
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; flex-direction: column;
@@ -62,26 +68,20 @@
         .splash-card {
             width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            animation: scaleIn 0.8s ease-out;
+            animation: scaleIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, fadeIn 1s ease-out forwards;
         }
         .shield-icon {
             width: 60px; height: 60px; background: var(--neon-blue);
             mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'/%3E%3C/svg%3E") no-repeat center;
             -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z'/%3E%3C/svg%3E") no-repeat center;
         }
+        .splash-title { font-size: 32px; font-weight: 900; margin-top: 24px; color: white; }
+        .splash-sub { color: var(--neon-blue); font-size: 10px; font-weight: bold; letter-spacing: 2px; margin-top: 8px; }
 
-        /* ONBOARDING */
-        .onboarding-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 16px; }
-        .onboarding-icon-box { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; margin-bottom: 48px; }
-        .onboarding-glow { position: absolute; width: 150px; height: 150px; border-radius: 50%; filter: blur(40px); opacity: 0.2; }
-        .indicator-row { display: flex; gap: 8px; margin-bottom: 40px; }
-        .indicator { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.2); transition: 0.3s; }
-        .indicator.active-ind { width: 24px; }
-        .indicator.inactive-ind { width: 8px; }
-
-        /* AUTH */
+        /* AUTHENTICATION */
         .auth-card {
-            background: rgba(255, 255, 255, 0.05); padding: 32px; border-radius: 28px; width: 100%;
+            background: rgba(255, 255, 255, 0.05); padding: 32px; border-radius: 28px;
+            width: 90%; max-width: 400px;
             text-align: center; border: 1px solid rgba(0, 242, 255, 0.15); backdrop-filter: blur(10px);
             margin-top: auto; margin-bottom: auto;
         }
@@ -89,6 +89,7 @@
         input {
             width: 100%; padding: 18px; border-radius: 16px; border: none;
             background: var(--input-bg); color: black; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin: 8px 0;
         }
         .pass-toggle {
             position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
@@ -98,19 +99,18 @@
             width: 100%; padding: 18px; border-radius: 28px; border: none;
             background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
             color: white; font-weight: bold; cursor: pointer; margin-top: 16px;
-            font-size: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: 0.2s;
+            font-size: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
-        .btn-gradient:active { transform: scale(0.98); }
 
-        /* HOME SCREEN */
-        .home-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: 20px; margin-bottom: 24px; }
-        .app-title { font-size: 38px; font-weight: 900; color: var(--neon-blue); letter-spacing: -0.5px; margin: 0; }
-        .gps-status { color: var(--text-gray); font-size: 14px; font-family: monospace; margin-top: 4px; }
-        .settings-btn { width: 50px; height: 50px; background: #1F2937; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(0, 242, 255, 0.1); }
+        /* HOME SCREEN (MASTER) */
+        .home-header { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; max-width: 600px; margin-top: 20px; margin-bottom: 24px; }
+        .app-title { font-size: 38px; font-weight: 900; color: var(--neon-blue); letter-spacing: -0.5px; margin: 0; text-align: left; }
+        .gps-status { color: var(--text-gray); font-size: 14px; font-family: monospace; margin-top: 4px; text-align: left; }
+        .settings-btn { width: 50px; height: 50px; background: #1F2937; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(0, 242, 255, 0.1); flex-shrink: 0; }
 
-        .top-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; width: 100%; }
+        .top-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; width: 100%; max-width: 600px; }
         .action-card {
-            background: var(--card-bg); border-radius: 28px; height: 160px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 28px; height: 160px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer; transition: 0.3s;
         }
@@ -120,20 +120,21 @@
         .action-card i { font-size: 40px; margin-bottom: 12px; }
         .action-card span { font-weight: bold; font-size: 16px; }
 
-        .section-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; align-self: flex-start; color: white; }
+        .section-title { font-size: 20px; font-weight: 900; margin-bottom: 20px; color: white; width: 100%; max-width: 600px; text-align: left; }
 
-        .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 120px; width: 100%; }
+        .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 120px; width: 100%; max-width: 600px; }
         .feature-item {
-            background: var(--card-bg); border-radius: 24px; height: 130px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 24px; height: 130px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.02);
         }
         .feature-item i { font-size: 32px; margin-bottom: 10px; }
-        .feature-item span { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.9); }
+        .feature-item span { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); }
 
-        /* BOTTOM NAV */
+        /* NAVIGATION */
         .bottom-nav {
-            position: absolute; bottom: 30px; left: 24px; right: 24px;
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: calc(100% - 48px); max-width: 450px;
             height: 80px; background: rgba(31, 41, 55, 0.6);
             backdrop-filter: blur(20px); border-radius: 40px;
             display: flex; align-items: center; justify-content: space-around;
@@ -143,104 +144,232 @@
         .nav-item { font-size: 28px; cursor: pointer; color: #6B7280; transition: 0.3s; }
         .nav-item.active-nav { color: var(--neon-blue); }
 
-        /* PROFILE */
-        .avatar-section { position: relative; margin-bottom: 32px; }
-        .avatar-circle { width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid rgba(0, 242, 255, 0.2); }
-        .camera-fab { position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--neon-blue); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-
-        /* SETTINGS */
-        .settings-container { width: 100%; margin-top: 24px; }
-        .setting-item {
-            background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 20px;
-            margin-bottom: 12px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.02); cursor: pointer;
-            width: 100%;
+        /* SETTINGS SCREEN */
+        .settings-header { display: flex; align-items: center; width: 100%; margin-top: 32px; margin-bottom: 32px; max-width: 600px; }
+        .back-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 10px; display: flex; align-items: center; }
+        .settings-title { font-size: 26px; font-weight: bold; margin-left: 8px; }
+        .settings-section-title { font-size: 14px; font-weight: bold; color: var(--neon-purple); margin: 24px 0 12px 0; width: 100%; max-width: 600px; text-align: left; }
+        .settings-card {
+            background: rgba(255, 255, 255, 0.05); border-radius: 20px; width: 100%; padding: 16px;
+            display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.05); transition: 0.3s; max-width: 600px;
         }
-        .setting-icon-box {
+        .settings-card:active { transform: scale(0.98); }
+        .settings-icon-box {
             width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, 0.05);
-            display: flex; align-items: center; justify-content: center; margin-right: 16px; font-size: 18px;
+            display: flex; align-items: center; justify-content: center; margin-right: 16px; color: var(--neon-blue);
         }
-        .back-row { width: 100%; display: flex; align-items: center; margin-bottom: 32px; margin-top: 32px; }
-        .back-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; }
+        .settings-text-box { flex: 1; }
+        .settings-item-title { font-size: 15px; font-weight: bold; }
+        .settings-item-subtitle { font-size: 11px; color: rgba(255, 255, 255, 0.5); }
+        .chevron { color: rgba(255, 255, 255, 0.2); font-size: 18px; }
 
-        /* MAP */
-        #map { height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-        .map-header { position: absolute; top: 0; left: 0; width: 100%; z-index: 1000; padding: 16px; display: flex; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        /* PROFILE SCREEN */
+        .avatar-container { position: relative; margin-bottom: 32px; }
+        .avatar-circle {
+            width: 120px; height: 120px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .avatar-image { width: 100%; height: 100%; object-fit: cover; }
+        .camera-badge {
+            position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; border-radius: 50%;
+            background: var(--neon-blue); display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer;
+        }
+        .profile-input-container { width: 100%; margin-bottom: 16px; max-width: 600px; }
+        .profile-input-label { font-size: 12px; color: var(--text-gray); margin-bottom: 4px; margin-left: 4px; display: block; text-align: left; }
+        .logout-btn { background: none; border: none; color: var(--red-sos); font-weight: bold; cursor: pointer; margin-top: 24px; font-size: 14px; }
+
+        /* LIST SCREENS (HISTORY, VAULT, CONTACTS) */
+        .list-container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+        .list-item {
+            background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 20px;
+            display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(0, 242, 255, 0.1);
+            cursor: pointer; transition: 0.2s;
+        }
+        .list-item.selected-item { background: rgba(0, 242, 255, 0.1); border-color: var(--neon-blue); }
+        .list-item-info { display: flex; flex-direction: column; flex: 1; margin-right: 16px; }
+        .list-item-title { font-size: 15px; font-weight: bold; }
+        .list-item-subtitle { font-size: 12px; color: var(--text-gray); margin-top: 4px; }
+        .list-item-coords { font-size: 10px; color: rgba(0, 242, 255, 0.5); font-family: monospace; margin-top: 2px; }
+        .play-btn { width: 40px; height: 40px; background: var(--neon-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; color: white; }
+        .delete-btn { width: 40px; height: 40px; background: rgba(255, 75, 75, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; color: var(--red-sos); }
+
+        .mini-map { width: 100%; height: 250px; border-radius: 24px; margin-bottom: 24px; overflow: hidden; display: none; position: relative; }
+        .mini-map.active-map { display: block; }
+        .close-mini-map { position: absolute; top: 12px; right: 12px; z-index: 1000; background: rgba(0,0,0,0.5); border: none; color: white; padding: 8px; border-radius: 8px; cursor: pointer; }
+
+        .record-fab {
+            position: fixed; bottom: 30px; right: 30px; width: 64px; height: 64px;
+            border-radius: 50%; background: var(--neon-blue); display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4); cursor: pointer; z-index: 2000; border: none; color: white; font-size: 24px;
+            transition: 0.3s;
+        }
+        .record-fab.recording { background: var(--red-sos); animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        .progress-bar { width: 100%; height: 2px; background: rgba(255,255,255,0.1); margin: 8px 0; overflow: hidden; display: none; }
+        .progress-fill { height: 100%; background: var(--neon-blue); width: 0%; transition: width 0.3s; }
+        .status-text { font-size: 10px; color: var(--neon-blue); margin-bottom: 8px; }
+
+        /* SOS SCREEN */
+        #sos-screen { background: #200000; justify-content: center; z-index: 5000; }
+        .sos-timer { font-size: 120px; font-weight: 900; margin: 40px 0; color: white; }
+        .emergency-text { color: var(--red-sos); font-size: 32px; font-weight: 900; letter-spacing: 2px; text-align: center; }
+        .sos-pulse-container { position: relative; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; margin: 40px 0; }
+        .sos-pulse-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(255, 75, 75, 0.15); animation: pulse-sos 1.5s infinite; }
+        @keyframes pulse-sos { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
+        .recording-badge {
+            background: rgba(255, 75, 75, 0.1); padding: 12px 24px; border-radius: 12px;
+            border: 1px solid rgba(255, 75, 75, 0.4); display: flex; align-items: center; gap: 10px;
+            margin-bottom: 20px;
+        }
+        .red-dot { width: 8px; height: 8px; background: var(--red-sos); border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .recording-text { color: var(--red-sos); font-size: 10px; font-weight: 900; letter-spacing: 0.5px; }
+
+        /* FAKE CALL SETUP */
+        #fake-call-setup-screen { background: var(--dark-navy); }
+        .preset-row { display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 40px; }
+        .preset-btn {
+            padding: 12px 20px; border-radius: 12px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; color: white; font-weight: bold;
+        }
+        .preset-btn.active-preset { background: rgba(76, 175, 80, 0.15); border-color: var(--success-green); color: var(--success-green); }
+
+        /* FAKE CALL INCOMING */
+        #fake-call-screen { background: black; justify-content: center; z-index: 6000; padding: 0; }
+        .fake-call-header { font-size: 20px; opacity: 0.6; margin-bottom: 10px; }
+        .fake-call-number { font-size: 44px; font-weight: 900; margin-bottom: 100px; }
+        .call-buttons { display: flex; gap: 80px; }
+        .call-btn { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
+        .call-btn.answer { background: var(--success-green); }
+        .call-btn.decline { background: var(--red-sos); }
+
+        /* TIMER SCREEN */
+        #timer-screen { background: #120024; justify-content: center; }
+        .timer-circle {
+            width: 240px; height: 240px; border-radius: 50%; border: 8px solid rgba(255,255,255,0.1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; margin-bottom: 40px;
+        }
+        .timer-display { font-size: 56px; font-weight: 900; color: white; margin: 0; }
+        .timer-status { color: var(--neon-blue); font-size: 12px; font-weight: bold; letter-spacing: 1px; margin-top: 4px; }
+        .timer-progress {
+            position: absolute; top: -8px; left: -8px; width: 240px; height: 240px;
+            border-radius: 50%; border: 8px solid var(--neon-purple);
+            clip-path: polygon(50% 50%, -50% -50%, 150% -50%); /* Start point */
+            transition: 1s linear; transform: rotate(0deg);
+        }
+        .timer-setup { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+        .timer-presets { display: flex; gap: 12px; margin-bottom: 32px; }
+        .timer-preset {
+            padding: 10px 20px; border-radius: 12px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: bold;
+        }
+        .timer-preset.active-preset { background: rgba(0, 242, 255, 0.15); border-color: var(--neon-blue); color: var(--neon-blue); }
+        .timer-inputs { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; }
+        .timer-input-box { display: flex; flex-direction: column; align-items: center; }
+        .timer-num-input {
+            width: 80px; height: 60px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; color: white; text-align: center; font-size: 24px; font-weight: bold;
+        }
+        .timer-num-input:focus { border-color: var(--neon-blue); }
+        .timer-input-label { color: rgba(255,255,255,0.4); font-size: 10px; margin-top: 4px; }
+
+        /* TRACKING SCREEN */
+        #track-screen { background: var(--dark-navy); padding: 0; }
+        .map-overlay {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(11, 16, 27, 0.9); padding: 20px;
+            border-radius: 20px; border: 1px solid var(--neon-blue); min-width: 250px;
+            text-align: center;
+        }
+        #track-signal-text { margin: 0; color: var(--neon-blue); font-size: 14px; letter-spacing: 1px; }
+        #track-coords { font-family: monospace; font-size: 11px; opacity: 0.7; margin-top: 5px; }
+        .map-back-btn {
+            position: absolute; top: 20px; left: 20px; z-index: 2000;
+            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 12px;
+            color: white; border: none; font-size: 24px; cursor: pointer;
+        }
+        #map-container { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* SWITCH STYLES */
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--neon-blue); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* THEME CIRCLE */
+        .theme-circle { width: 12px; height: 12px; border-radius: 50%; margin-right: 16px; }
+
+        /* MODAL STYLES */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 10000;
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-content {
+            background: var(--dark-navy); padding: 32px; border-radius: 28px;
+            width: 100%; max-width: 400px; border: 1px solid rgba(0,242,255,0.1);
+        }
+
     </style>
 </head>
 <body>
+
     <div class="app-container">
-        <!-- SCREEN 0: SPLASH -->
+
+        <!-- 0. SPLASH -->
         <div id="splash-screen">
             <div class="splash-card"><div class="shield-icon"></div></div>
-            <div style="margin-top: 24px; font-size: 32px; font-weight: 900;">SafeWatch</div>
-            <div style="color: var(--neon-blue); font-size: 10px; font-weight: bold; letter-spacing: 2px; margin-top: 8px;">YOUR DIGITAL SHIELD</div>
+            <div class="splash-title">SafeWatch</div>
+            <div class="splash-sub">YOUR DIGITAL SHIELD</div>
         </div>
 
-        <!-- SCREEN 1: ONBOARDING -->
-        <div id="onboarding-screen" class="screen">
-            <div style="width: 100%; display: flex; justify-content: flex-end;">
-                <button style="background: none; border: none; color: rgba(255,255,255,0.5); font-size: 14px; cursor: pointer;" onclick="showScreen('login-screen')">Skip</button>
-            </div>
-            <div class="onboarding-content">
-                <div class="onboarding-icon-box">
-                    <div id="onb-glow" class="onboarding-glow"></div>
-                    <div id="onb-icon" style="font-size: 80px; z-index: 2;">📍</div>
-                </div>
-                <h1 id="onb-title" style="font-size: 28px; font-weight: bold; margin: 0;">Live GPS Tracking</h1>
-                <p id="onb-desc" style="color: var(--text-gray); font-size: 16px; margin-top: 16px; line-height: 1.5;">Share your real-time location with your trusted emergency circle.</p>
-            </div>
-            <div class="indicator-row">
-                <div class="indicator active-ind" id="ind-0"></div>
-                <div class="indicator inactive-ind" id="ind-1"></div>
-                <div class="indicator inactive-ind" id="ind-2"></div>
-            </div>
-            <button class="btn-gradient" id="onb-btn" onclick="nextOnboarding()" style="height: 64px; border-radius: 16px; margin-bottom: 48px;">Continue</button>
-        </div>
-
-        <!-- SCREEN 2: LOGIN -->
+        <!-- 1. LOGIN -->
         <div id="login-screen" class="screen">
-            <div class="splash-card" style="margin-top: 48px; width: 80px; height: 80px;"><div class="shield-icon" style="width:40px; height:40px;"></div></div>
-            <h1 style="font-size: 32px; font-weight: 900; color: var(--neon-blue); margin-top: 24px; margin-bottom: 0;">SafeWatch</h1>
-            <p style="color: var(--text-gray); font-size: 14px; margin-top: 8px; margin-bottom: 48px;">Login with Email or Phone</p>
-            <div class="auth-card">
+            <div class="auth-card" style="margin-top: 48px;">
+                <div class="splash-card" style="width: 80px; height: 80px; margin: 0 auto 24px auto;"><div class="shield-icon" style="width:40px; height:40px;"></div></div>
+                <h1 style="font-size: 32px; font-weight: 900; color: var(--neon-blue); margin-bottom: 0;">SafeWatch</h1>
+                <p style="color: var(--text-gray); font-size: 14px; margin-top: 8px; margin-bottom: 48px;">Login with Email or Phone</p>
                 <input type="email" id="login-email" placeholder="Email Address">
                 <div class="input-group">
                     <input type="password" id="login-pass" placeholder="Password">
-                    <span class="pass-toggle" onclick="togglePassword('login-pass', this)">👁️</span>
+                    <span class="pass-toggle" onclick="togglePass('login-pass')">👁️</span>
                 </div>
-                <div style="text-align: right; color: var(--neon-blue); font-size: 12px; font-weight: bold; margin-top: 8px; cursor: pointer;" onclick="alert('Reset link sent to email')">Forgot Password?</div>
+                <div style="text-align: right; color: var(--neon-blue); font-size: 12px; font-weight: 700; margin-top: 12px; cursor: pointer;">Forgot Password?</div>
                 <button class="btn-gradient" onclick="handleLogin()">Login to SafeWatch</button>
                 <p style="margin-top: 32px; font-size: 14px; color: var(--text-gray);">New here? <span style="color: var(--neon-blue); font-weight: bold; cursor: pointer;" onclick="showScreen('signup-screen')">Sign Up</span></p>
             </div>
         </div>
 
-        <!-- SCREEN 3: SIGNUP -->
+        <!-- 2. SIGNUP -->
         <div id="signup-screen" class="screen">
-            <h1 style="font-size: 28px; font-weight: bold; margin-top: 48px; margin-bottom: 0;">Create Account</h1>
-            <p style="color: var(--text-gray); font-size: 14px; margin-top: 8px; margin-bottom: 32px;">Join SafeWatch for maximum protection</p>
-            <div class="auth-card">
+            <div class="auth-card" style="margin-top: 48px;">
+                <h1 style="font-size: 28px; font-weight: 900; margin-bottom: 0;">Create Account</h1>
+                <p style="color: var(--text-gray); font-size: 14px; margin-top: 8px; margin-bottom: 32px;">Join SafeWatch for maximum protection</p>
                 <input type="text" id="reg-name" placeholder="Full Name">
                 <input type="email" id="reg-email" placeholder="Email Address">
                 <input type="text" id="reg-phone" placeholder="Phone Number">
                 <div class="input-group">
                     <input type="password" id="reg-pass" placeholder="Password">
-                    <span class="pass-toggle" onclick="togglePassword('reg-pass', this)">👁️</span>
-                </div>
-                <div class="input-group">
-                    <input type="password" id="reg-confirm" placeholder="Confirm Password">
-                    <span class="pass-toggle" onclick="togglePassword('reg-confirm', this)">👁️</span>
+                    <span class="pass-toggle" onclick="togglePass('reg-pass')">👁️</span>
                 </div>
                 <button class="btn-gradient" onclick="handleSignup()">Register for SafeWatch</button>
                 <p style="margin-top: 32px; font-size: 14px; color: var(--text-gray);">Already a member? <span style="color: var(--neon-blue); font-weight: bold; cursor: pointer;" onclick="showScreen('login-screen')">Login</span></p>
             </div>
         </div>
 
-        <!-- SCREEN 4: HOME -->
+        <!-- 3. HOME (MASTER VIEW) -->
         <div id="home-screen" class="screen">
             <div class="home-header">
                 <div>
                     <h1 class="app-title">ShadowGuard</h1>
-                    <div class="gps-status" id="home-gps">GPS: 13.0281, 80.0156</div>
+                    <div class="gps-status" id="home-gps">GPS: Searching...</div>
+                    <div class="gps-status" style="color: var(--success-green); opacity: 0.8; font-size: 10px;">RELAY: ACTIVE</div>
                 </div>
                 <div class="settings-btn" onclick="showScreen('settings-screen')">
                     <span style="font-size: 24px; color: var(--neon-blue)">⚙️</span>
@@ -252,7 +381,7 @@
                     <i style="color: var(--neon-blue)">🎯</i>
                     <span>Live GPS</span>
                 </div>
-                <div class="action-card sos" onclick="startSOSFlow()">
+                <div class="action-card sos" onclick="startSOS()">
                     <i style="color: #FF3B30">⚠️</i>
                     <span>SOS Alert</span>
                 </div>
@@ -261,15 +390,15 @@
             <div class="section-title">Core Features</div>
 
             <div class="features-grid">
-                <div class="feature-item" onclick="alert('Timer Active')">
+                <div class="feature-item" onclick="showScreen('timer-screen')">
                     <i style="color: #BF5AF2">⏱️</i>
                     <span>Safety Timer</span>
                 </div>
-                <div class="feature-item" onclick="loadHistory()">
+                <div class="feature-item" onclick="showHistory()">
                     <i style="color: #9CA3AF">🕒</i>
                     <span>Location History</span>
                 </div>
-                <div class="feature-item" onclick="loadVault()">
+                <div class="feature-item" onclick="showVault()">
                     <i style="color: #00F2FF">🎙️</i>
                     <span>Voice Record</span>
                 </div>
@@ -280,114 +409,413 @@
             </div>
 
             <div class="bottom-nav">
-                <div class="nav-item active-nav" onclick="showScreen('home-screen')">🏠</div>
+                <div class="nav-item active-nav">🏠</div>
                 <div class="nav-item" onclick="showScreen('profile-screen')">👤</div>
             </div>
         </div>
 
-        <!-- SCREEN 5: SETTINGS -->
+        <!-- 4. SETTINGS -->
         <div id="settings-screen" class="screen">
-            <div class="back-row">
+            <div class="settings-header">
                 <button class="back-btn" onclick="showScreen('home-screen')">←</button>
-                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Settings</h2>
+                <div class="settings-title">Settings</div>
             </div>
-            <div class="settings-container">
-                <div class="setting-item" onclick="showScreen('profile-screen')"><div class="setting-icon-box">👤</div><div><b>User Profile</b><br><small style="opacity:0.5">Manage your personal information</small></div></div>
-                <div class="setting-item" onclick="showScreen('contacts-screen')"><div class="setting-icon-box">👥</div><div><b>Emergency Circle</b><br><small style="opacity:0.5">Manage trusted contacts</small></div></div>
-                <p style="color: var(--neon-purple); font-size: 14px; font-weight: bold; margin-top: 24px; margin-bottom: 8px;">Safety Protocol</p>
-                <div class="setting-item" onclick="showScreen('hardware-screen')"><div class="setting-icon-box">⚡</div><div><b>Hardware Triggers</b><br><small style="opacity:0.5">Silent SOS via physical buttons</small></div></div>
-                <div class="setting-item" onclick="showScreen('battery-screen')"><div class="setting-icon-box">🔋</div><div><b>Last Breath Protocol</b><br><small style="opacity:0.5">Emergency broadcast on low battery</small></div></div>
-                <p style="color: var(--neon-purple); font-size: 14px; font-weight: bold; margin-top: 24px; margin-bottom: 8px;">Data & Vault</p>
-                <div class="setting-item" onclick="loadVault()"><div class="setting-icon-box">📂</div><div><b>Evidence Vault</b><br><small style="opacity:0.5">Securely stored voice and logs</small></div></div>
-                <div class="setting-item" onclick="handleLogout()" style="margin-top:40px; border-color: rgba(255,0,0,0.3); color: var(--red-sos);"><div class="setting-icon-box" style="background: rgba(255,0,0,0.1); color: var(--red-sos);">🚪</div><b>Logout Account</b></div>
+
+            <div class="settings-card" onclick="showScreen('profile-screen')">
+                <div class="settings-icon-box">👤</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">User Profile</div>
+                    <div class="settings-item-subtitle">Manage your personal information</div>
+                </div>
+                <div class="chevron">›</div>
             </div>
+
+            <div class="settings-card" onclick="showContacts()">
+                <div class="settings-icon-box">👥</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Emergency Circle</div>
+                    <div class="settings-item-subtitle">Manage trusted contacts</div>
+                </div>
+                <div class="chevron">›</div>
+            </div>
+
+            <div class="settings-section-title">Safety Protocol</div>
+
+            <div class="settings-card" onclick="showHardwareTriggers()">
+                <div class="settings-icon-box">⚡</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Hardware Triggers</div>
+                    <div class="settings-item-subtitle">Silent SOS via physical buttons</div>
+                </div>
+                <div class="chevron">›</div>
+            </div>
+
+            <div class="settings-card" onclick="showLastBreath()">
+                <div class="settings-icon-box">🔋</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Last Breath Protocol</div>
+                    <div class="settings-item-subtitle">Emergency broadcast on low battery</div>
+                </div>
+                <div class="chevron">›</div>
+            </div>
+
+            <div class="settings-section-title">Data & Vault</div>
+
+            <div class="settings-card" onclick="showVault()">
+                <div class="settings-icon-box">📂</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Evidence Vault</div>
+                    <div class="settings-item-subtitle">Securely stored voice and logs</div>
+                </div>
+                <div class="chevron">›</div>
+            </div>
+
+            <div class="settings-card" onclick="showPrivacy()">
+                <div class="settings-icon-box">🛡️</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Privacy & Security</div>
+                    <div class="settings-item-subtitle">Data encryption and app locking</div>
+                </div>
+                <div class="chevron">›</div>
+            </div>
+
+            <div class="settings-section-title">System</div>
+
+            <div class="settings-card" onclick="showThemes()">
+                <div class="settings-icon-box">🎨</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Themes & Appearance</div>
+                    <div class="settings-item-subtitle">UI Customization</div>
+                </div>
+                <div class="chevron">›</div>
+            </div>
+
+            <div style="margin-top: 20px; opacity: 0.3; font-size: 12px; text-align: center;">ShadowGuard v1.5.0</div>
         </div>
 
-        <!-- SCREEN 6: PROFILE -->
+        <!-- 5. PROFILE (EDIT MODE) -->
         <div id="profile-screen" class="screen">
-            <div class="back-row">
+            <div class="settings-header">
                 <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
-                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Edit Profile</h2>
+                <div class="settings-title">Edit Profile</div>
             </div>
-            <div class="avatar-section">
-                <div class="avatar-circle"><div style="font-size: 64px; color: var(--neon-blue);">👤</div></div>
-                <div class="camera-fab">📷</div>
+
+            <div class="avatar-container">
+                <div class="avatar-circle">
+                    <div id="avatar-placeholder" style="font-size: 64px; color: var(--neon-blue);">👤</div>
+                    <img id="avatar-img" class="avatar-image" src="" style="display:none;" alt="Profile Avatar">
+                </div>
+                <button class="camera-badge">📷</button>
             </div>
-            <input type="text" id="prof-name" placeholder="Full Name" style="margin-bottom:12px;">
-            <input type="email" id="prof-email" placeholder="Email Address" disabled style="background: rgba(255,255,255,0.1); color: gray; margin-bottom:12px;">
-            <input type="text" id="prof-phone" placeholder="Phone Number" style="margin-bottom:12px;">
-            <input type="text" id="prof-dob" placeholder="Date of Birth" style="margin-bottom:12px;">
-            <input type="text" id="prof-addr" placeholder="Home Address" style="margin-bottom:12px;">
-            <button class="btn-gradient" style="margin-top: 48px;" onclick="saveProfile()">Update Profile</button>
+
+            <div class="profile-input-container">
+                <label class="profile-input-label">FULL NAME</label>
+                <input type="text" id="prof-name" placeholder="Enter full name">
+            </div>
+
+            <div class="profile-input-container">
+                <label class="profile-input-label">EMAIL (READ ONLY)</label>
+                <input type="email" id="prof-email" disabled style="background: rgba(255,255,255,0.1); color: gray;">
+            </div>
+
+            <div class="profile-input-container">
+                <label class="profile-input-label">PHONE NUMBER</label>
+                <input type="text" id="prof-phone" placeholder="Enter phone number">
+            </div>
+
+            <div style="display: flex; gap: 16px; width: 100%; max-width: 600px;">
+                <div class="profile-input-container" style="flex: 1;">
+                    <label class="profile-input-label">DOB</label>
+                    <input type="text" id="prof-dob" placeholder="DD/MM/YYYY">
+                </div>
+                <div class="profile-input-container" style="flex: 1;">
+                    <label class="profile-input-label">ADDRESS</label>
+                    <input type="text" id="prof-addr" placeholder="Home">
+                </div>
+            </div>
+
+            <button class="btn-gradient" onclick="saveProfile()" style="margin-top: 24px; max-width: 600px;">Save Changes</button>
+
+            <button class="logout-btn" onclick="handleLogout()">Logout Account</button>
         </div>
 
-        <!-- SCREEN 7: MAP -->
-        <div id="track-screen" class="screen" style="padding: 0;">
-            <div class="map-header"><button class="back-btn" onclick="showScreen('home-screen')">←</button><div style="margin-left: 16px; font-weight: bold;">Live GPS Tracking</div></div>
-            <div id="map"></div>
+        <!-- 6. TRACKING (GUARDIAN / LIVE) -->
+        <div id="track-screen" class="screen">
+            <div class="map-overlay">
+                <h3 id="track-signal-text">SIGNAL: SECURE</h3>
+                <div id="track-coords">LAT: -- | LNG: --</div>
+            </div>
+            <button class="map-back-btn" onclick="showScreen('home-screen')">←</button>
+            <div id="map-container"></div>
         </div>
 
-        <!-- SCREEN 8: HISTORY -->
-        <div id="history-screen" class="screen">
-            <div class="back-row">
+        <!-- 7. SOS SCREEN -->
+        <div id="sos-screen" class="screen">
+            <div class="emergency-text">EMERGENCY SOS</div>
+            <p style="opacity: 0.6; font-size: 12px; margin-top: 8px;">Broadcasting live position...</p>
+
+            <div class="sos-pulse-container">
+                <div class="sos-pulse-ring"></div>
+                <div id="sos-timer" class="sos-timer" style="position: relative; z-index: 10;">5</div>
+            </div>
+
+            <div class="recording-badge">
+                <div class="red-dot"></div>
+                <div class="recording-text">AUTOMATIC EVIDENCE RECORDING ACTIVE</div>
+            </div>
+
+            <button class="btn-gradient" style="background: white; color: black; width: 250px; font-weight: 900;" onclick="cancelSOS()">CANCEL SOS</button>
+        </div>
+
+        <!-- 8. FAKE CALL SETUP SCREEN -->
+        <div id="fake-call-setup-screen" class="screen">
+            <div class="settings-header">
                 <button class="back-btn" onclick="showScreen('home-screen')">←</button>
-                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Travel History</h2>
+                <div class="settings-title">Fake Call Setup</div>
             </div>
-            <div id="history-list" style="width: 100%;"></div>
+
+            <div style="text-align: center; margin-top: 32px; margin-bottom: 48px; width: 100%; max-width: 600px;">
+                <div class="splash-card" style="width: 100px; height: 100px; margin: 0 auto 24px auto; background: rgba(76, 175, 80, 0.1);"><span style="font-size: 40px; color: var(--success-green);">📞</span></div>
+                <h2 style="font-size: 22px; font-weight: bold; margin-bottom: 8px;">Simulate Incoming Call</h2>
+                <p style="color: var(--text-gray); font-size: 14px;">Helps you exit uncomfortable situations</p>
+            </div>
+
+            <div class="settings-section-title">CALLER IDENTITY</div>
+            <input type="text" id="fake-caller-name" placeholder="Caller Name (e.g. Home / Boss)" style="margin-bottom: 24px; max-width: 600px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);">
+
+            <div class="settings-section-title">SCHEDULE TIMER</div>
+            <div class="preset-row">
+                <button class="preset-btn active-preset" onclick="setCallPreset(10, this)">10s</button>
+                <button class="preset-btn" onclick="setCallPreset(30, this)">30s</button>
+                <button class="preset-btn" onclick="setCallPreset(60, this)">1m</button>
+                <button class="preset-btn" onclick="setCallPreset(300, this)">5m</button>
+            </div>
+
+            <button class="btn-gradient" id="schedule-call-btn" onclick="scheduleFakeCall()" style="max-width: 600px;">Schedule Fake Call</button>
+            <p id="call-status" style="margin-top: 24px; color: var(--success-green); font-size: 14px; display: none;"></p>
         </div>
 
-        <!-- SCREEN 9: VAULT -->
-        <div id="vault-screen" class="screen">
-            <div class="back-row">
+        <!-- 8. FAKE CALL SCREEN (INCOMING) -->
+        <div id="fake-call-screen" class="screen">
+            <div class="fake-call-header">Incoming Call</div>
+            <div class="fake-call-number">Home / Family</div>
+            <div class="call-buttons">
+                <div class="call-btn decline" onclick="showScreen('home-screen')">✕</div>
+                <div class="call-btn answer" onclick="showScreen('home-screen')">📞</div>
+            </div>
+        </div>
+
+        <!-- 9. TIMER SCREEN -->
+        <div id="timer-screen" class="screen">
+            <div class="settings-header">
                 <button class="back-btn" onclick="showScreen('home-screen')">←</button>
-                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Voice Recordings</h2>
+                <div>
+                    <div class="settings-item-title" style="font-size: 24px;">Safety Timer</div>
+                    <div class="settings-item-subtitle">Auto SOS if timer reaches zero</div>
+                </div>
             </div>
-            <div id="vault-list" style="width: 100%;"></div>
+
+            <div class="timer-circle" style="margin-top: auto; margin-bottom: auto;">
+                <div class="timer-display" id="timer-display">10:00</div>
+                <div class="timer-status" id="timer-status">STANDBY</div>
+            </div>
+
+            <div id="timer-setup-ui" class="timer-setup">
+                <div class="timer-presets">
+                    <div class="timer-preset" onclick="setTimerPreset(60, this)">1m</div>
+                    <div class="timer-preset" onclick="setTimerPreset(300, this)">5m</div>
+                    <div class="timer-preset active-preset" onclick="setTimerPreset(600, this)">10m</div>
+                </div>
+
+                <div class="settings-section-title" style="text-align: center; margin-bottom: 12px;">CUSTOM DURATION</div>
+                <div class="timer-inputs">
+                    <div class="timer-input-box">
+                        <input type="number" id="timer-min" class="timer-num-input" value="10" min="0" max="999">
+                        <span class="timer-input-label">MIN</span>
+                    </div>
+                    <div style="font-size: 32px; font-weight: bold;">:</div>
+                    <div class="timer-input-box">
+                        <input type="number" id="timer-sec" class="timer-num-input" value="00" min="0" max="59">
+                        <span class="timer-input-label">SEC</span>
+                    </div>
+                </div>
+                <button class="btn-gradient" id="timer-btn" onclick="toggleTimer()">Activate Timer</button>
+            </div>
+
+            <button class="btn-gradient" id="timer-stop-btn" style="display:none; background: var(--success-green); margin-bottom: 48px;" onclick="toggleTimer()">I AM SAFE (STOP)</button>
         </div>
 
-        <!-- SCREEN 10: CONTACTS -->
-        <div id="contacts-screen" class="screen">
-            <div class="back-row">
-                <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
-                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Emergency Circle</h2>
+        <!-- 10. LIST SCREENS (HISTORY, VAULT, CONTACTS) -->
+        <div id="list-screen" class="screen">
+            <div class="settings-header">
+                <button class="back-btn" onclick="showScreen('home-screen'); hideListExtras();">←</button>
+                <div class="settings-title" id="list-title">History</div>
             </div>
-            <p style="opacity:0.6; text-align:center;">Manage your trusted emergency contacts here.</p>
+
+            <div id="status-container" style="display:none; width: 100%; max-width: 600px;">
+                <div class="status-text" id="status-text">SYNCING...</div>
+                <div class="progress-bar" id="progress-bar" style="display:block;"><div class="progress-fill" id="progress-fill"></div></div>
+            </div>
+
+            <div id="mini-map-container" class="mini-map">
+                <button class="close-mini-map" onclick="hideMiniMap()">✕</button>
+                <div id="mini-map" style="width:100%; height:100%;"></div>
+            </div>
+
+            <div id="list-content" class="list-container">
+                <!-- Content injected here -->
+            </div>
+
+            <button class="btn-gradient" id="add-member-btn" style="display:none; max-width: 600px;" onclick="openAddContactModal()">Add New Member</button>
+            <button id="record-fab" class="record-fab" style="display:none;" onclick="toggleManualRecording()">🎙️</button>
         </div>
 
-        <!-- SCREEN 11: HARDWARE -->
+        <!-- 11. HARDWARE TRIGGERS SCREEN -->
         <div id="hardware-screen" class="screen">
-            <div class="back-row">
+            <div class="settings-header">
                 <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
-                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Hardware Triggers</h2>
+                <div class="settings-title">Hardware Triggers</div>
             </div>
-            <p style="opacity:0.6; text-align:center;">Configure silent SOS via physical buttons.</p>
+            <div class="settings-section-title">Silent Emergency Triggers</div>
+            <p style="color: var(--text-gray); font-size: 12px; margin-bottom: 24px; align-self: flex-start; max-width: 600px;">Configure how to trigger SOS without opening the app</p>
+
+            <div class="settings-card">
+                <div class="settings-icon-box">⚡</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Power Button SOS</div>
+                    <div class="settings-item-subtitle">Press power button 5 times rapidly</div>
+                </div>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+
+            <div class="settings-card">
+                <div class="settings-icon-box">📳</div>
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Shake to Alert</div>
+                    <div class="settings-item-subtitle">Rapidly shake your device</div>
+                </div>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
         </div>
 
-        <!-- SCREEN 12: BATTERY -->
+        <!-- 12. LAST BREATH PROTOCOL SCREEN -->
         <div id="battery-screen" class="screen">
-            <div class="back-row">
+            <div class="settings-header">
                 <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
-                <h2 style="margin: 0; margin-left: 16px; font-size: 26px; font-weight: bold;">Last Breath</h2>
+                <div class="settings-title">Last Breath Protocol</div>
             </div>
-            <p style="opacity:0.6; text-align:center;">Emergency broadcast on low battery settings.</p>
+            <div style="text-align: center; margin-top: 32px; margin-bottom: 48px; width: 100%; max-width: 600px;">
+                <div class="splash-card" style="width: 100px; height: 100px; margin: 0 auto 24px auto; background: rgba(255, 152, 0, 0.1);"><span style="font-size: 40px; color: var(--warning-orange);">🔋</span></div>
+                <h2 style="font-size: 22px; font-weight: bold; margin-bottom: 8px;">Last Breath Sync</h2>
+                <p style="color: var(--text-gray); font-size: 14px;">Automatic SOS broadcast when battery is critical</p>
+            </div>
+            <div class="settings-card">
+                <div class="settings-text-box">
+                    <div class="settings-item-title">Enable Protocol</div>
+                    <div class="settings-item-subtitle">Final GPS push before shutdown</div>
+                </div>
+                <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+            <div style="width: 100%; max-width: 600px; margin-top: 32px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span>Trigger Threshold</span>
+                    <span style="color: var(--warning-orange);">15%</span>
+                </div>
+                <input type="range" min="1" max="20" value="15" style="width: 100%; cursor: pointer;">
+            </div>
         </div>
 
-        <!-- SCREEN 13: SOS COUNTDOWN -->
-        <div id="sos-screen" class="screen" style="background: #240000; justify-content: center;">
-            <h1 style="color: var(--red-sos); font-size: 40px; font-weight: 900;">EMERGENCY</h1>
-            <div id="sos-timer" style="font-size: 120px; font-weight: 900; margin: 40px 0;">5</div>
-            <button class="btn-gradient" style="background: white; color: black;" onclick="cancelSOS()">CANCEL SOS</button>
-        </div>
-
-        <!-- SCREEN 14: FAKE CALL -->
-        <div id="fake-call-screen" class="screen" style="background: black; justify-content: center;">
-            <div style="font-size: 24px; margin-bottom: 20px; opacity: 0.7;">SafeWatch Protection</div>
-            <div style="font-size: 40px; font-weight: bold;">+1 (555) 012-9432</div>
-            <div style="margin-top: 100px; display: flex; gap: 80px;">
-                <div onclick="showScreen('home-screen')" style="background: #FF3B30; width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,0,0.4);">📞</div>
-                <div onclick="showScreen('home-screen')" style="background: #34C759; width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; box-shadow: 0 0 20px rgba(0,255,0,0.4); animation: pulse 2s infinite;">📞</div>
+        <!-- 13. PRIVACY & SECURITY SCREEN -->
+        <div id="privacy-screen" class="screen">
+            <div class="settings-header">
+                <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
+                <div class="settings-title">Privacy & Security</div>
+            </div>
+            <div class="list-container" style="margin-top: 32px;">
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <div class="list-item-title">Data Encryption</div>
+                        <div class="list-item-subtitle">End-to-end AES-256 active</div>
+                    </div>
+                    <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <div class="list-item-title">Biometric Lock</div>
+                        <div class="list-item-subtitle">Fingerprint for app entry</div>
+                    </div>
+                    <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <div class="list-item-title">Privacy Mode</div>
+                        <div class="list-item-subtitle">Hide coordinates from public</div>
+                    </div>
+                    <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
             </div>
         </div>
+
+        <!-- 14. THEMES & APPEARANCE SCREEN -->
+        <div id="themes-screen" class="screen">
+            <div class="settings-header">
+                <button class="back-btn" onclick="showScreen('settings-screen')">←</button>
+                <div class="settings-title">Themes & Appearance</div>
+            </div>
+
+            <div id="theme-options" style="width: 100%; max-width: 600px; display: flex; flex-direction: column; align-items: center;">
+                <div class="settings-section-title">Select Protocol</div>
+                <div class="list-container">
+                    <div class="settings-card" onclick="setTheme('futuristic')">
+                        <div class="theme-circle" style="background: var(--neon-blue);"></div>
+                        <div class="settings-text-box">
+                            <div class="settings-item-title">Futuristic Dark</div>
+                            <div class="settings-item-subtitle">Neon accents with navy background</div>
+                        </div>
+                        <label class="switch" pointer-events="none">
+                            <input type="checkbox" id="switch-futuristic" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-card" onclick="setTheme('stealth')">
+                        <div class="theme-circle" style="background: white;"></div>
+                        <div class="settings-text-box">
+                            <div class="settings-item-title">Stealth Black</div>
+                            <div class="settings-item-subtitle">True black background</div>
+                        </div>
+                        <label class="switch" pointer-events="none">
+                            <input type="checkbox" id="switch-stealth">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-card" onclick="setTheme('midnight')">
+                        <div class="theme-circle" style="background: var(--neon-purple);"></div>
+                        <div class="settings-text-box">
+                            <div class="settings-item-title">Midnight Purple</div>
+                            <div class="settings-item-subtitle">Purple gradients and shadows</div>
+                        </div>
+                        <label class="switch" pointer-events="none">
+                            <input type="checkbox" id="switch-midnight">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <button class="btn-gradient" onclick="alert('Visual Protocol Locked')" style="margin-top: 24px; max-width: 600px;">Save Theme Protocol</button>
+            </div>
+        </div>
+
+        <!-- MODAL: ADD CONTACT -->
+        <div id="add-contact-modal" class="modal">
+            <div class="modal-content">
+                <h2 style="margin-top:0">Add Member</h2>
+                <input type="text" id="new-contact-name" placeholder="Full Name" style="margin-bottom:12px">
+                <input type="text" id="new-contact-phone" placeholder="Phone Number" style="margin-bottom:12px">
+                <input type="text" id="new-contact-rel" placeholder="Relationship (e.g. Brother)" style="margin-bottom:24px">
+                <button class="btn-gradient" onclick="handleAddContact()">Add to Circle</button>
+                <button class="logout-btn" onclick="closeModal('add-contact-modal')" style="width:100%">Cancel</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -395,190 +823,605 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kc3p5cWFic2xqYnJqZmNpbXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwMDMwMzMsImV4cCI6MjEwMTU3OTAzM30.g_xrYF9H5xo3wYXBFKPwdnNdn4lNPCNkjeWbwZuKNBM";
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, map, marker, sosInterval;
-        let onbIndex = 0;
-        const onboardingData = [
-            { title: "Live GPS Tracking", desc: "Share your real-time location with your trusted emergency circle.", icon: "📍", color: "#00F2FF" },
-            { title: "Safety Check-in", desc: "Set a timer and let SafeWatch alert your family if you don't check in.", icon: "🕒", color: "#BD00FF" },
-            { title: "Instant SOS", desc: "One tap to broadcast an emergency alert with your live path.", icon: "⚠️", color: "#FF4B4B" }
-        ];
+        let currentUser = null, map, marker, sosInterval, timerInterval, userLat, userLng;
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             const target = document.getElementById(id);
             if(target) target.classList.add('active');
-            if (id === 'track-screen') setTimeout(() => map && map.invalidateSize(), 500);
+
+            // Critical fix: Ensure map is initialized and sized when screen becomes visible
+            if (id === 'track-screen') {
+                if (!map && currentUser) initTracking(currentUser.id);
+                setTimeout(() => {
+                    if(map) {
+                        map.invalidateSize();
+                        if (userLat && userLng) map.setView([userLat, userLng], 16);
+                    }
+                }, 400);
+            }
+
+            // Stop active processes if leaving screen
+            if (id !== 'sos-screen') clearInterval(sosInterval);
+
+            // Reset extra UIs
+            document.getElementById('add-member-btn').style.display = 'none';
+            document.getElementById('record-fab').style.display = 'none';
+            if (id !== 'list-screen') hideMiniMap();
         }
 
-        async function checkUser() {
-            try {
-                const { data: { session } } = await client.auth.getSession();
-                setTimeout(() => {
-                    document.getElementById('splash-screen').style.display = 'none';
+        function hideListExtras() {
+            document.getElementById('record-fab').style.display = 'none';
+            hideMiniMap();
+        }
 
-                    const params = new URLSearchParams(window.location.search);
-                    const guardianId = params.get('id');
-
-                    if (guardianId) {
-                        // Bypass everything for Emergency Guardian link
-                        showScreen('track-screen');
-                        initTracking(guardianId);
-                        return;
-                    }
-
-                    if (session) {
-                        currentUser = session.user;
-                        fetchProfile();
-                        showScreen('home-screen');
-                    } else {
-                        const hasSeenOnboarding = localStorage.getItem('onboarding_done');
-                        if(hasSeenOnboarding) {
-                            showScreen('login-screen');
-                        } else {
-                            onbIndex = 0;
-                            updateOnboarding();
-                            showScreen('onboarding-screen');
-                        }
-                    }
-                }, 1000); // reduced to 1 second
-            } catch (err) {
-                console.error("Auth init error:", err);
-                document.getElementById('splash-screen').style.display = 'none';
-                showScreen('login-screen');
+        // MINI MAP LOGIC
+        let miniMap, miniMarker;
+        function showMiniMap(lat, lng) {
+            document.getElementById('mini-map-container').classList.add('active-map');
+            if (!miniMap) {
+                miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false }).setView([lat, lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+                miniMarker = L.marker([lat, lng]).addTo(miniMap);
+            } else {
+                miniMap.setView([lat, lng], 15);
+                miniMarker.setLatLng([lat, lng]);
+                setTimeout(() => miniMap.invalidateSize(), 100);
             }
+        }
+        function hideMiniMap() {
+            document.getElementById('mini-map-container').classList.remove('active-map');
+        }
+
+        // MANUAL RECORDING
+        let mediaRecorder, recordedChunks = [];
+        async function toggleManualRecording() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+                document.getElementById('record-fab').classList.remove('recording');
+            } else {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    recordedChunks = [];
+                    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+                    mediaRecorder.onstop = uploadManualRecording;
+                    mediaRecorder.start();
+                    document.getElementById('record-fab').classList.add('recording');
+                } catch (err) { alert("Microphone access denied"); }
+            }
+        }
+
+        async function uploadManualRecording() {
+            const blob = new Blob(recordedChunks, { type: 'audio/mp4' });
+            const timestamp = Date.now();
+            const fileName = `Manual_Note_${timestamp}.m4a`;
+            const storagePath = `${currentUser.id}/${fileName}`;
+
+            showSyncStatus("UPLOAD_STARTED: Syncing to cloud...");
+
+            const { data, error } = await client.storage.from('voice-recordings').upload(storagePath, blob);
+
+            if (error) {
+                alert("Upload failed: " + error.message);
+                hideSyncStatus();
+            } else {
+                await client.from('evidence_vault').insert({
+                    user_id: currentUser.id,
+                    file_name: fileName,
+                    storage_path: storagePath
+                });
+                showSyncStatus("✅ UPLOAD_SUCCESS: Vault synced", 2000);
+                showVault();
+            }
+        }
+
+        function showSyncStatus(text, duration = 0) {
+            const container = document.getElementById('status-container');
+            const statusText = document.getElementById('status-text');
+            const fill = document.getElementById('progress-fill');
+            container.style.display = 'block';
+            statusText.innerText = text;
+            fill.style.width = '50%';
+            if (duration > 0) {
+                fill.style.width = '100%';
+                setTimeout(() => container.style.display = 'none', duration);
+            }
+        }
+        function hideSyncStatus() { document.getElementById('status-container').style.display = 'none'; }
+
+        async function checkUser() {
+            const { data: { session } } = await client.auth.getSession();
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.display = 'none';
+
+                const params = new URLSearchParams(window.location.search);
+                const guardianId = params.get('id');
+
+                if (guardianId) {
+                    showScreen('track-screen');
+                    initTracking(guardianId);
+                    return;
+                }
+
+                if (session) {
+                    currentUser = session.user;
+                    loadProfileData();
+                    showScreen('home-screen');
+                    startLocationSync();
+                } else {
+                    showScreen('login-screen');
+                }
+            }, 2500);
         }
         checkUser();
 
-        function nextOnboarding() {
-            onbIndex++;
-            if (onbIndex >= onboardingData.length) {
-                localStorage.setItem('onboarding_done', 'true');
-                showScreen('login-screen');
-                return;
-            }
-            updateOnboarding();
-        }
-
-        function updateOnboarding() {
-            const data = onboardingData[onbIndex];
-            document.getElementById('onb-title').innerText = data.title;
-            document.getElementById('onb-desc').innerText = data.desc;
-            document.getElementById('onb-icon').innerText = data.icon;
-            document.getElementById('onb-glow').style.background = data.color;
-            document.getElementById('onb-btn').style.background = data.color;
-            document.getElementById('onb-btn').innerText = (onbIndex === 2) ? "Get Started" : "Continue";
-
-            document.querySelectorAll('.indicator').forEach((ind, i) => {
-                ind.className = (i === onbIndex) ? "indicator active-ind" : "indicator inactive-ind";
-                if(i === onbIndex) ind.style.background = data.color; else ind.style.background = "rgba(255,255,255,0.2)";
-            });
-        }
-
         async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            if(!email || !pass) { alert("Please enter credentials"); return; }
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
+            const { data, error } = await client.auth.signInWithPassword({ email: e, password: p });
+            if (error) {
+                alert(error.message);
+            } else {
+                // Request permissions immediately after successful login (User Gesture context)
+                await requestPermissions();
+                location.reload();
+            }
+        }
 
-            const { error } = await client.auth.signInWithPassword({ email, password: pass });
-            if (error) alert(error.message); else location.reload();
+        async function requestPermissions() {
+            console.log("🛡️ Requesting Safety Permissions...");
+
+            // 1. Geolocation Permission
+            if (navigator.geolocation) {
+                await new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        () => resolve(),
+                        () => resolve()
+                    );
+                });
+            }
+
+            // 2. Microphone Permission (for Evidence Vault)
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop()); // Release mic immediately
+            } catch (e) {
+                console.warn("Microphone access not granted.");
+            }
         }
 
         async function handleSignup() {
-            const { error } = await client.auth.signUp({
-                email: document.getElementById('reg-email').value,
-                password: document.getElementById('reg-pass').value,
-                options: { data: { full_name: document.getElementById('reg-name').value } }
+            const e = document.getElementById('reg-email').value;
+            const p = document.getElementById('reg-pass').value;
+            const n = document.getElementById('reg-name').value;
+            const ph = document.getElementById('reg-phone').value;
+
+            const { data, error } = await client.auth.signUp({
+                email: e,
+                password: p,
+                options: { data: { full_name: n, phone: ph } }
             });
-            if (error) alert(error.message); else alert("Check email for verification!");
-        }
 
-        async function handleLogout() { await client.auth.signOut(); location.reload(); }
-
-        function togglePassword(id, el) {
-            const input = document.getElementById(id);
-            if (input.type === "password") {
-                input.type = "text";
-                el.innerText = "👁️‍🗨️";
+            if (error) {
+                alert(error.message);
             } else {
-                input.type = "password";
-                el.innerText = "👁️";
+                if (data.user) {
+                    // Mirroring Android logic: upsert to 'users' table
+                    await client.from('users').upsert({
+                        id: data.user.id,
+                        full_name: n,
+                        email: e,
+                        phone: ph,
+                        updated_at: new Date()
+                    });
+                }
+                alert("Registration successful! Please check your email for verification.");
+                showScreen('login-screen');
             }
         }
 
-        async function fetchProfile() {
+        async function handleLogout() {
+            await client.auth.signOut();
+            location.reload();
+        }
+
+        function togglePass(id) {
+            const input = document.getElementById(id);
+            input.type = input.type === "password" ? "text" : "password";
+        }
+
+        async function loadProfileData() {
             const { data } = await client.from('users').select('*').eq('id', currentUser.id).single();
             if (data) {
-                document.getElementById('prof-name').value = data.full_name || "";
-                document.getElementById('prof-email').value = currentUser.email || "";
-                document.getElementById('prof-phone').value = data.phone || "";
-                document.getElementById('prof-dob').value = data.dob || "";
-                document.getElementById('prof-addr').value = data.home_address || "";
+                document.getElementById('prof-name').value = data.full_name || '';
+                document.getElementById('prof-email').value = currentUser.email;
+                document.getElementById('prof-phone').value = data.phone || '';
+                document.getElementById('prof-dob').value = data.dob || '';
+                document.getElementById('prof-addr').value = data.home_address || '';
+                if(data.avatar_url) {
+                    document.getElementById('avatar-placeholder').style.display = 'none';
+                    document.getElementById('avatar-img').style.display = 'block';
+                    document.getElementById('avatar-img').src = data.avatar_url;
+                }
             }
         }
 
         async function saveProfile() {
-            await client.from('users').upsert({
+            const updates = {
                 id: currentUser.id,
                 full_name: document.getElementById('prof-name').value,
                 phone: document.getElementById('prof-phone').value,
                 dob: document.getElementById('prof-dob').value,
                 home_address: document.getElementById('prof-addr').value,
                 updated_at: new Date()
-            });
-            alert("Profile Saved!");
+            };
+            const { error } = await client.from('users').upsert(updates);
+            if (error) alert(error.message); else alert("Profile updated successfully!");
         }
 
-        function startSOSFlow() {
-            showScreen('sos-screen'); let count = 5;
+        // SOS LOGIC
+        async function startSOS() {
+            showScreen('sos-screen');
+            let count = 5;
             document.getElementById('sos-timer').innerText = count;
             sosInterval = setInterval(async () => {
-                count--; document.getElementById('sos-timer').innerText = count;
+                count--;
+                document.getElementById('sos-timer').innerText = count;
                 if (count <= 0) {
                     clearInterval(sosInterval);
-                    await client.from('sos_alerts').insert({ user_id: currentUser.id, trigger_type: 'WEB_SOS', status: 'ACTIVE' });
-                    alert("SOS SENT!"); showScreen('home-screen');
+
+                    // 1. Create alert in Supabase
+                    await client.from('sos_alerts').insert({
+                        user_id: currentUser.id,
+                        latitude: userLat,
+                        longitude: userLng,
+                        trigger_type: 'WEB_MANUAL',
+                        status: 'ACTIVE'
+                    });
+
+                    // 2. Fetch Contacts and trigger SMS Relay
+                    const { data: contacts } = await client.from('emergency_contacts').select('contact_phone').eq('user_id', currentUser.id);
+
+                    if (contacts && contacts.length > 0) {
+                        const trackingLink = `https://majestic-pudding-3979e7.netlify.app/?id=${currentUser.id}`;
+                        const smsMessage = `🚨 EMERGENCY SOS! I need help. Track my live location here: ${trackingLink}`;
+
+                        for (const contact of contacts) {
+                            await client.from('sms_relay').insert({
+                                user_id: currentUser.id,
+                                phone: contact.contact_phone,
+                                message: smsMessage
+                            });
+                        }
+                        alert("EMERGENCY SOS BROADCASTED & SMS RELAY INITIATED");
+                    } else {
+                        alert("EMERGENCY SOS BROADCASTED (No contacts found for SMS)");
+                    }
+
+                    showScreen('home-screen');
                 }
             }, 1000);
         }
-        function cancelSOS() { clearInterval(sosInterval); showScreen('home-screen'); }
 
+        function cancelSOS() {
+            clearInterval(sosInterval);
+            showScreen('home-screen');
+        }
+
+        // TIMER LOGIC
+        let isTimerRunning = false;
+        let timerSeconds = 600;
+
+        function setTimerPreset(seconds, el) {
+            timerSeconds = seconds;
+            document.querySelectorAll('.timer-preset').forEach(p => p.classList.remove('active-preset'));
+            el.classList.add('active-preset');
+            document.getElementById('timer-min').value = Math.floor(seconds / 60);
+            document.getElementById('timer-sec').value = seconds % 60;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const min = Math.floor(timerSeconds / 60);
+            const sec = timerSeconds % 60;
+            document.getElementById('timer-display').innerText = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            const m = parseInt(document.getElementById('timer-min').value) || 0;
+            const s = parseInt(document.getElementById('timer-sec').value) || 0;
+            timerSeconds = (m * 60) + s;
+            if (timerSeconds <= 0) return alert("Please set a duration");
+
+            isTimerRunning = true;
+            document.getElementById('timer-status').innerText = "PROTECTION ACTIVE";
+            document.getElementById('timer-setup-ui').style.display = 'none';
+            document.getElementById('timer-stop-btn').style.display = 'block';
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    triggerTimerSOS();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('timer-status').innerText = "STANDBY";
+            document.getElementById('timer-setup-ui').style.display = 'flex';
+            document.getElementById('timer-stop-btn').style.display = 'none';
+            timerSeconds = 600; // Reset to default
+            updateTimerDisplay();
+        }
+
+        function toggleTimer() {
+            if (isTimerRunning) stopTimer();
+            else startTimer();
+        }
+
+        async function triggerTimerSOS() {
+            // 1. Create Alert
+            await client.from('sos_alerts').insert({
+                user_id: currentUser.id,
+                latitude: userLat,
+                longitude: userLng,
+                trigger_type: 'TIMER_EXPIRED',
+                status: 'ACTIVE'
+            });
+
+            // 2. Trigger SMS Relay
+            const { data: contacts } = await client.from('emergency_contacts').select('contact_phone').eq('user_id', currentUser.id);
+            if (contacts && contacts.length > 0) {
+                const trackingLink = `https://majestic-pudding-3979e7.netlify.app/?id=${currentUser.id}`;
+                const smsMessage = `⚠️ SAFETY TIMER EXPIRED! I haven't checked in. Track my location: ${trackingLink}`;
+                for (const contact of contacts) {
+                    await client.from('sms_relay').insert({
+                        user_id: currentUser.id,
+                        phone: contact.contact_phone,
+                        message: smsMessage
+                    });
+                }
+            }
+
+            alert("TIMER EXPIRED: EMERGENCY SOS BROADCASTED");
+            stopTimer();
+            showScreen('home-screen');
+        }
+
+        // LIST FETCHERS
+        async function showHistory() {
+            showScreen('list-screen');
+            document.getElementById('list-title').innerText = "Location History";
+            const content = document.getElementById('list-content');
+            content.innerHTML = "<div class='loader' style='margin: 40px auto;'></div>";
+
+            const { data } = await client.from('location_history').select('*').eq('user_id', currentUser.id).order('captured_at', { ascending: false });
+
+            if (data && data.length > 0) {
+                content.innerHTML = data.map(item => `
+                    <div class="list-item" onclick="showMiniMap(${item.latitude}, ${item.longitude})">
+                        <div class="list-item-info">
+                            <div class="list-item-title">Logged Position</div>
+                            <div class="list-item-subtitle">${new Date(item.captured_at).toLocaleString()}</div>
+                            <div class="list-item-coords">${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}</div>
+                        </div>
+                        <div style="color: var(--neon-blue); font-size: 20px;">›</div>
+                    </div>
+                `).join('');
+            } else {
+                content.innerHTML = "<div style='text-align:center; opacity:0.5; margin-top:40px;'>No history found.</div>";
+            }
+        }
+
+        async function showVault() {
+            showScreen('list-screen');
+            document.getElementById('list-title').innerText = "Evidence Vault";
+            document.getElementById('record-fab').style.display = 'flex';
+            const content = document.getElementById('list-content');
+            content.innerHTML = "<div class='loader' style='margin: 40px auto;'></div>";
+
+            const { data } = await client.from('evidence_vault').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+
+            if (data && data.length > 0) {
+                content.innerHTML = data.map(item => `
+                    <div class="list-item">
+                        <div class="list-item-info">
+                            <div class="list-item-title">${item.file_name}</div>
+                            <div class="list-item-subtitle">Recorded on ${new Date(item.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <button class="play-btn" onclick="window.open('https://mdszyqabsljbrjfcimss.supabase.co/storage/v1/object/public/voice-recordings/${item.storage_path}?apikey=${SUPABASE_KEY}')">▶</button>
+                    </div>
+                `).join('');
+            } else {
+                content.innerHTML = "<div style='text-align:center; opacity:0.5; margin-top:40px;'>Vault is empty.</div>";
+            }
+        }
+
+        async function showContacts() {
+            showScreen('list-screen');
+            document.getElementById('list-title').innerText = "Emergency Circle";
+            document.getElementById('add-member-btn').style.display = 'block';
+            const content = document.getElementById('list-content');
+            content.innerHTML = "Loading...";
+
+            const { data } = await client.from('emergency_contacts').select('*').eq('user_id', currentUser.id);
+
+            if (data && data.length > 0) {
+                content.innerHTML = data.map(item => `
+                    <div class="list-item">
+                        <div class="list-item-info">
+                            <div class="list-item-title">${item.contact_name}</div>
+                            <div class="list-item-subtitle">${item.contact_phone} (${item.relationship})</div>
+                        </div>
+                        <button class="delete-btn" onclick="handleDeleteContact('${item.id}')">🗑️</button>
+                    </div>
+                `).join('');
+            } else {
+                content.innerHTML = "No contacts added.";
+            }
+        }
+
+        // CONTACT MANAGEMENT
+        function openAddContactModal() { document.getElementById('add-contact-modal').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function handleAddContact() {
+            const name = document.getElementById('new-contact-name').value;
+            const phone = document.getElementById('new-contact-phone').value;
+            const rel = document.getElementById('new-contact-rel').value;
+
+            if(!name || !phone) return alert("Fill Name and Phone");
+
+            const { error } = await client.from('emergency_contacts').insert({
+                user_id: currentUser.id,
+                contact_name: name,
+                contact_phone: phone,
+                relationship: rel
+            });
+
+            if(error) alert(error.message);
+            else {
+                closeModal('add-contact-modal');
+                showContacts();
+            }
+        }
+
+        async function handleDeleteContact(id) {
+            if(!confirm("Remove from Circle?")) return;
+            const { error } = await client.from('emergency_contacts').delete().eq('id', id);
+            if(error) alert(error.message); else showContacts();
+        }
+
+        function showHardwareTriggers() { showScreen('hardware-screen'); }
+        function showLastBreath() { showScreen('battery-screen'); }
+        function showPrivacy() { showScreen('privacy-screen'); }
+        function showThemes() { showScreen('themes-screen'); }
+
+        // THEME LOGIC
+        function setTheme(theme) {
+            document.getElementById('switch-futuristic').checked = false;
+            document.getElementById('switch-stealth').checked = false;
+            document.getElementById('switch-midnight').checked = false;
+            document.getElementById(`switch-${theme}`).checked = true;
+            alert(`Theme ${theme} applied!`);
+        }
+
+        // FAKE CALL LOGIC
+        let scheduledCallTime = 10;
+        let callTimeout;
+
+        function setCallPreset(seconds, el) {
+            scheduledCallTime = seconds;
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active-preset'));
+            el.classList.add('active-preset');
+        }
+
+        function scheduleFakeCall() {
+            const name = document.getElementById('fake-caller-name').value || "Home / Family";
+            const status = document.getElementById('call-status');
+
+            status.innerText = `Call from ${name} scheduled in ${scheduledCallTime} seconds`;
+            status.style.display = 'block';
+
+            clearTimeout(callTimeout);
+            callTimeout = setTimeout(() => {
+                document.querySelector('#fake-call-screen .fake-call-number').innerText = name;
+                showScreen('fake-call-screen');
+                status.style.display = 'none';
+            }, scheduledCallTime * 1000);
+        }
+
+        function showFakeCall() {
+            showScreen('fake-call-setup-screen');
+        }
+
+        // TRACKING LOGIC
         function initTracking(userId) {
-            if (map) return;
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([0,0], 2);
+            // Force re-initialization if userId changes or map missing
+            if (map) {
+                map.remove();
+                map = null;
+            }
+
+            // Fix for Leaflet default marker icons not showing in some environments
+            delete L.Icon.Default.prototype._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            });
+
+            map = L.map('map-container', { zoomControl: false, attributionControl: false }).setView([0, 0], 2);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            marker = L.marker([0,0]).addTo(map);
-            client.from('user_locations').select('*').eq('user_id', userId).single().then(r => {
-                if(r.data) {
-                    updateMap(r.data.latitude, r.data.longitude);
-                    if(document.getElementById('home-gps')) {
-                        document.getElementById('home-gps').innerText = `GPS: ${r.data.latitude.toFixed(4)}, ${r.data.longitude.toFixed(4)}`;
+            marker = L.marker([0, 0]).addTo(map);
+
+            // Listen for ALL changes (INSERT/UPDATE) to user_locations for this target
+            client.channel('live-tracking-' + userId)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'user_locations',
+                    filter: `user_id=eq.${userId}`
+                }, payload => {
+                    if (payload.new && payload.new.latitude) {
+                        console.log("📍 Location Update Received:", payload.new);
+                        updateUI(payload.new.latitude, payload.new.longitude);
                     }
+                }).subscribe();
+
+            // Initial fetch to show current position immediately
+            client.from('user_locations').select('*').eq('user_id', userId).maybeSingle().then(res => {
+                if (res.data) {
+                    console.log("📍 Initial Location Fetched:", res.data);
+                    updateUI(res.data.latitude, res.data.longitude);
                 }
             });
         }
-        function updateMap(lat, lng) { marker.setLatLng([lat, lng]); map.setView([lat, lng], 16); }
 
-        async function loadHistory() {
-            showScreen('history-screen');
-            const { data } = await client.from('location_history').select('*').eq('user_id', currentUser.id).order('captured_at', {ascending:false}).limit(10);
-            document.getElementById('history-list').innerHTML = (data || []).map(i => `
-                <div class='setting-item' style='justify-content:space-between;'>
-                    <div><b>Logged Position</b><br><small style='opacity:0.6;'>${i.captured_at.substring(0,16).replace('T',' ')}</small></div>
-                    <div style='color:var(--neon-blue)'>📍</div>
-                </div>`).join('');
+        function updateUI(lat, lng) {
+            userLat = lat; userLng = lng;
+            if (marker) marker.setLatLng([lat, lng]);
+            if (map) map.setView([lat, lng], 16);
+
+            const signalText = document.getElementById('track-signal-text');
+            if (signalText) signalText.innerText = "SIGNAL: SECURE";
+
+            const coordsText = document.getElementById('track-coords');
+            if (coordsText) coordsText.innerText = `LAT: ${lat.toFixed(6)} | LNG: ${lng.toFixed(6)}`;
+
+            if(document.getElementById('home-gps')) {
+                document.getElementById('home-gps').innerText = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                document.getElementById('home-gps').style.color = "var(--neon-blue)";
+            }
         }
 
-        async function loadVault() {
-            showScreen('vault-screen');
-            const { data } = await client.from('evidence_vault').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false});
-            document.getElementById('vault-list').innerHTML = (data || []).map(i => `
-                <div class='setting-item' style='justify-content:space-between;'>
-                    <div><b>${i.file_name}</b><br><small style='opacity:0.6;'>${i.created_at.substring(0,10)}</small></div>
-                    <button class='btn-gradient' style='width:auto;margin:0;padding:8px 16px;border-radius:12px;font-size:12px;' onclick="window.open('${SUPABASE_URL}/storage/v1/object/public/voice-recordings/${i.storage_path}')">PLAY</button>
-                </div>`).join('');
+        function startLocationSync() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const { latitude, longitude } = pos.coords;
+                    console.log("📡 Pushing GPS to Cloud:", latitude, longitude);
+                    client.from('user_locations').upsert({
+                        user_id: currentUser.id,
+                        latitude,
+                        longitude,
+                        updated_at: new Date()
+                    });
+                    updateUI(latitude, longitude);
+                }, err => {
+                    console.error("⚠️ Geolocation Error:", err);
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 1000,
+                    timeout: 5000
+                });
+            }
         }
-
-        function showFakeCall() { showScreen('fake-call-screen'); }
     </script>
 </body>
 </html>

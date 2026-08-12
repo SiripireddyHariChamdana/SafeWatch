@@ -25,6 +25,7 @@ import androidx.core.app.NotificationCompat;
 import com.example.myapplication.data.SupabaseBackendManager;
 import com.example.myapplication.util.LocationFlow;
 import com.example.myapplication.util.ShakeDetector;
+import com.example.myapplication.util.SmsRelaySync;
 import com.example.myapplication.Platform_androidKt;
 import com.google.android.gms.location.*;
 
@@ -78,6 +79,9 @@ public class SafeWatchBackendService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        // Ensure androidContext is initialized for Platform calls in background
+        com.example.myapplication.Platform_androidKt.androidContext = this.getApplicationContext();
+
         currentUserId = getSharedPreferences("SafeWatch", MODE_PRIVATE).getString("uid", null);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         
@@ -176,6 +180,11 @@ public class SafeWatchBackendService extends Service {
             }
             if ("TRIGGER_SOS".equals(intent.getAction())) triggerEmergencyFlow("MANUAL");
         }
+        
+        if (currentUserId != null) {
+            SmsRelaySync.INSTANCE.startSync(currentUserId);
+        }
+
         fusedLocationClient.requestLocationUpdates(new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).build(), locationCallback, null);
         return START_STICKY;
     }

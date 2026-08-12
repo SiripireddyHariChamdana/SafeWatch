@@ -146,6 +146,8 @@ public class SupabaseBackendManager {
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "No error body";
                     System.out.println("UPLOAD_FAILED: HTTP " + response.code() + " - " + errorBody);
+                    // Fallback: If it's a 404, maybe the bucket or user folder doesn't exist? 
+                    // But usually post works.
                 }
                 response.close();
             }
@@ -153,7 +155,7 @@ public class SupabaseBackendManager {
     }
 
     public static String getPlayableUrl(String storagePath) {
-        // Ensure apikey is included as a query parameter for reliable access even in public buckets
+        // Fix: Use the correct path for public object access
         String url = SUPABASE_URL + "/storage/v1/object/public/voice-recordings/" + storagePath + "?apikey=" + SUPABASE_KEY;
         System.out.println("PLAYBACK_URL_CREATED: " + url);
         return url;
