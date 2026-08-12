@@ -52,6 +52,7 @@ object SupabaseManager {
 
     suspend fun uploadAvatar(userId: String, bytes: ByteArray): String? {
         val fileName = "avatar_$userId.jpg"
+        println("🚀 SupabaseManager: Uploading avatar for $userId (${bytes.size} bytes)")
         return try {
             client.storage.from("avatars").upload(
                 path = fileName,
@@ -60,9 +61,11 @@ object SupabaseManager {
                 upsert = true
             }
             val url = client.storage.from("avatars").publicUrl(fileName)
+            println("✅ SupabaseManager: Upload SUCCESS. URL: $url")
             url
         } catch (e: Exception) {
-            println("❌ Avatar upload error: ${e.message}")
+            println("❌ SupabaseManager: Avatar upload FAILED: ${e.message}")
+            e.printStackTrace()
             null
         }
     }

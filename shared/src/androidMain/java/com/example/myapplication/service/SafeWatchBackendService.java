@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.util.Log;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -79,6 +80,7 @@ public class SafeWatchBackendService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.i("SafeWatchService", "🚀 Service onCreate started");
         // Ensure androidContext is initialized for Platform calls in background
         com.example.myapplication.Platform_androidKt.androidContext = this.getApplicationContext();
 
@@ -173,6 +175,12 @@ public class SafeWatchBackendService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         startForeground(1, createNotification());
+        
+        // Always try to retrieve the UID from storage if not in intent
+        if (currentUserId == null) {
+            currentUserId = getSharedPreferences("SafeWatch", MODE_PRIVATE).getString("uid", null);
+        }
+
         if (intent != null) {
             if (intent.hasExtra("USER_ID")) {
                 currentUserId = intent.getStringExtra("USER_ID");
@@ -181,8 +189,11 @@ public class SafeWatchBackendService extends Service {
             if ("TRIGGER_SOS".equals(intent.getAction())) triggerEmergencyFlow("MANUAL");
         }
         
-        if (currentUserId != null) {
+        if (currentUserId != null && !currentUserId.isEmpty()) {
+            Log.i("SafeWatchService", "📡 Restarting SMS Relay Sync for: " + currentUserId);
             SmsRelaySync.INSTANCE.startSync(currentUserId);
+        } else {
+            Log.w("SafeWatchService", "⚠️ Cannot start SMS Relay: User ID is NULL");
         }
 
         fusedLocationClient.requestLocationUpdates(new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).build(), locationCallback, null);

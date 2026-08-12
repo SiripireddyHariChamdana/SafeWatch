@@ -30,8 +30,7 @@ fun App() {
             if (isLoggedIn) {
                 if (currentRoute == Screen.Login.route || 
                     currentRoute == Screen.Signup.route || 
-                    currentRoute == Screen.Splash.route ||
-                    currentRoute == Screen.Onboarding.route) {
+                    currentRoute == Screen.Splash.route) {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -40,7 +39,6 @@ fun App() {
                 // Only navigate to login if we are not on a public screen
                 if (currentRoute != null && 
                     currentRoute != Screen.Splash.route && 
-                    currentRoute != Screen.Onboarding.route && 
                     currentRoute != Screen.Login.route &&
                     currentRoute != Screen.Signup.route &&
                     currentRoute != Screen.ForgotPassword.route &&
@@ -63,7 +61,7 @@ fun App() {
                         if (isLoggedIn) {
                             navController.navigate(Screen.Home.route) { popUpTo(Screen.Splash.route) { inclusive = true } }
                         } else {
-                            navController.navigate(Screen.Onboarding.route) { popUpTo(Screen.Splash.route) { inclusive = true } }
+                            navController.navigate(Screen.Login.route) { popUpTo(Screen.Splash.route) { inclusive = true } }
                         }
                     }
                 }
@@ -117,12 +115,13 @@ fun App() {
             composable(Screen.Home.route) {
                 HomeScreen(
                     onNavigateToSOS = { navController.navigate(Screen.SOS.route) },
-                    onNavigateToTimer = { navController.navigate(Screen.SafetyTimer.route) },
                     onNavigateToHistory = { navController.navigate(Screen.LocationHistory.route) },
                     onNavigateToVoiceNotes = { navController.navigate(Screen.VoiceNotes.route) },
                     onNavigateToFakeCall = { navController.navigate(Screen.FakeCall.route) },
                     onNavigateToLiveTracking = { navController.navigate(Screen.LiveTracking.route) },
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                    onNavigateToContacts = { navController.navigate(Screen.EmergencyContacts.route) },
                     viewModel = authViewModel
                 )
             }

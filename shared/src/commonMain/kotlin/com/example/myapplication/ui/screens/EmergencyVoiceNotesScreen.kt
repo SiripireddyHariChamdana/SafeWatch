@@ -27,6 +27,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
@@ -59,13 +60,31 @@ fun EmergencyVoiceNotesScreen(onBack: () -> Unit) {
         }
     }
 
+    fun deleteRecording(recording: Evidence) {
+        scope.launch {
+            try {
+                // 1. Delete from Storage
+                SupabaseManager.client.storage.from("voice-recordings").delete(listOf(recording.storage_path))
+                // 2. Delete from Database
+                SupabaseManager.client.postgrest["evidence_vault"].delete {
+                    filter { eq("id", recording.id.toString()) }
+                }
+                fetchRecordings()
+                println("✅ VoiceNotes: Deleted ${recording.file_name}")
+            } catch (e: Exception) {
+                println("❌ VoiceNotes: Delete FAILED: ${e.message}")
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         fetchRecordings()
     }
 
     var isRecording by remember { mutableStateOf(false) }
     var isUploading by remember { mutableStateOf(false) }
-    var playingPath by remember { mutableStateOf<String?>(null) }
+    var currentPlayingUrl by remember { mutableStateOf<String?>(null) }
+    var isAudioPlaying by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize().background(DarkNavy)) {
         SecurityGridBackground()
@@ -81,7 +100,7 @@ fun EmergencyVoiceNotesScreen(onBack: () -> Unit) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
 
-            if (isRecording || isUploading || playingPath != null) {
+            if (isRecording || isUploading || currentPlayingUrl != null) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth().height(2.dp),
                     color = if (isRecording) Color.Red else NeonBlue,
@@ -91,7 +110,7 @@ fun EmergencyVoiceNotesScreen(onBack: () -> Unit) {
                     text = when {
                         isRecording -> "RECORDING_STARTED: Capturing evidence..."
                         isUploading -> "UPLOAD_STARTED: Syncing to cloud..."
-                        else -> "PLAYBACK_REQUESTED: Loading audio..."
+                        else -> if (isAudioPlaying) "PLAYBACK_ACTIVE" else "PLAYBACK_PAUSED"
                     },
                     color = if (isRecording) Color.Red else NeonBlue,
                     fontSize = 10.sp,
@@ -117,24 +136,19 @@ fun EmergencyVoiceNotesScreen(onBack: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(recordings) { recording ->
+                        val url = SupabaseManager.getPlayableUrl(recording.storage_path)
                         EvidenceCard(
                             fileName = recording.file_name,
                             date = recording.created_at?.take(16)?.replace("T", " ") ?: "Date N/A",
-                            isPlaying = playingPath == recording.storage_path,
+                            isPlaying = currentPlayingUrl == url && isAudioPlaying,
                             onPlay = {
-                                scope.launch {
-                                    println("PLAYBACK_REQUESTED: ${recording.storage_path}")
-                                    println("RECORDING_PATH: ${recording.storage_path}")
-                                    playingPath = recording.storage_path
-                                    val url = SupabaseManager.getPlayableUrl(recording.storage_path)
-                                    if (url.isNotEmpty()) {
-                                        getPlatform().playAudio(url)
-                                        // Reset loading state after a delay or we could add a callback to Platform
-                                        kotlinx.coroutines.delay(3000)
-                                    }
-                                    playingPath = null
+                                if (currentPlayingUrl != url) {
+                                    getPlatform().stopAudio()
+                                    currentPlayingUrl = url
                                 }
-                            }
+                                isAudioPlaying = getPlatform().toggleAudio(url)
+                            },
+                            onDelete = { deleteRecording(recording) }
                         )
                     }
                     item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -201,9 +215,9 @@ fun EmergencyVoiceNotesScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun EvidenceCard(fileName: String, date: String, isPlaying: Boolean = false, onPlay: () -> Unit) {
+fun EvidenceCard(fileName: String, date: String, isPlaying: Boolean = false, onPlay: () -> Unit, onDelete: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).clickable { if (!isPlaying) onPlay() },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).clickable { onPlay() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isPlaying) NeonBlue.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.05f)
@@ -224,9 +238,9 @@ fun EvidenceCard(fileName: String, date: String, isPlaying: Boolean = false, onP
                 contentAlignment = Alignment.Center
             ) {
                 if (isPlaying) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Icon(Icons.Default.Pause, null, tint = Color.White)
                 } else {
-                    Icon(Icons.Default.Mic, null, tint = NeonBlue)
+                    Icon(Icons.Default.PlayArrow, null, tint = NeonBlue)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -244,12 +258,15 @@ fun EvidenceCard(fileName: String, date: String, isPlaying: Boolean = false, onP
                     fontSize = 11.sp
                 )
             }
-            IconButton(onClick = onPlay, enabled = !isPlaying) {
+            IconButton(onClick = onPlay) {
                 Icon(
-                    imageVector = if (isPlaying) Icons.Default.GraphicEq else Icons.Default.PlayArrow,
+                    imageVector = if (isPlaying) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
                     contentDescription = null, 
                     tint = NeonBlue
                 )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, null, tint = RedSOS.copy(alpha = 0.7f))
             }
         }
     }

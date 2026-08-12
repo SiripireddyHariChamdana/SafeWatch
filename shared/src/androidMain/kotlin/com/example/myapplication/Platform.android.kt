@@ -178,7 +178,9 @@ class AndroidPlatform(private val context: Context) : Platform {
     }
 
     override fun sendNativeSms(phoneNumber: String, message: String) {
+        android.util.Log.i("Platform", "📠 Sending native SMS to $phoneNumber")
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            android.util.Log.e("Platform", "❌ Missing SEND_SMS permission!")
             return
         }
         try {
@@ -190,7 +192,10 @@ class AndroidPlatform(private val context: Context) : Platform {
             }
             val parts = smsManager.divideMessage(message)
             smsManager.sendMultipartTextMessage(phoneNumber, null, parts, null, null)
-        } catch (e: Exception) { }
+            android.util.Log.i("Platform", "✅ SMS message sent successfully")
+        } catch (e: Exception) { 
+            android.util.Log.e("Platform", "❌ SMS Transmission FAILED: ${e.message}")
+        }
     }
 
     override fun sendEmail(to: String, subject: String, body: String) {
@@ -221,54 +226,65 @@ class AndroidPlatform(private val context: Context) : Platform {
         LaunchedEffect(Unit) { launcher.launch(permissions) }
     }
 
+    companion object {
+        private var manualRecorder: MediaRecorder? = null
+        private var lastManualFile: String? = null
+        private var mediaPlayer: MediaPlayer? = null
+        private var currentAudioUrl: String? = null
+    }
+
     override fun playAudio(url: String) {
         println("PLAYBACK_REQUESTED: $url")
         try {
-            val mediaPlayer = MediaPlayer()
-            
-            // Set audio attributes for media playback
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mediaPlayer.setAudioAttributes(
-                    android.media.AudioAttributes.Builder()
-                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                )
+            stopAudio()
+            mediaPlayer = MediaPlayer().apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    setAudioAttributes(
+                        android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build()
+                    )
+                }
+                setDataSource(context, Uri.parse(url))
+                setOnPreparedListener { it.start() }
+                setOnErrorListener { mp, _, _ -> mp.release(); true }
+                setOnCompletionListener { it.release(); mediaPlayer = null; currentAudioUrl = null }
+                prepareAsync()
             }
-            
-            // Log the URL to verify apikey query param
-            println("🔊 Audio: Opening Stream URL...")
-            
-            mediaPlayer.setDataSource(context, Uri.parse(url))
-            
-            mediaPlayer.setOnPreparedListener { 
-                println("PLAYBACK_STARTED")
-                it.start() 
-            }
-            
-            mediaPlayer.setOnErrorListener { mp, what, extra ->
-                println("PLAYBACK_FAILED: MediaPlayer Error (What: $what, Extra: $extra)")
-                // common what: 1 (MEDIA_ERROR_UNKNOWN), 100 (MEDIA_ERROR_SERVER_DIED)
-                // common extra: -1004 (MEDIA_ERROR_IO), -1007 (MEDIA_ERROR_MALFORMED)
-                mp.release()
-                true
-            }
-            
-            mediaPlayer.setOnCompletionListener { 
-                println("PLAYBACK_COMPLETED")
-                it.release() 
-            }
-            
-            mediaPlayer.prepareAsync()
+            currentAudioUrl = url
         } catch (e: Exception) {
-            println("PLAYBACK_FAILED: Exception ${e.message}")
             e.printStackTrace()
         }
     }
 
-    companion object {
-        private var manualRecorder: MediaRecorder? = null
-        private var lastManualFile: String? = null
+    override fun toggleAudio(url: String): Boolean {
+        return try {
+            val player = mediaPlayer
+            if (player != null && currentAudioUrl == url) {
+                if (player.isPlaying) {
+                    player.pause()
+                    false
+                } else {
+                    player.start()
+                    true
+                }
+            } else {
+                playAudio(url)
+                true
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override fun stopAudio() {
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
+            currentAudioUrl = null
+        } catch (e: Exception) {}
     }
 
     override fun startManualRecording(): String? {
@@ -332,8 +348,13 @@ class AndroidPlatform(private val context: Context) : Platform {
             }
         }
         
-        SideEffect {
-            launcher.launch("image/*")
+        var launched by remember { mutableStateOf(false) }
+        
+        LaunchedEffect(launched) {
+            if (!launched) {
+                launcher.launch("image/*")
+                launched = true
+            }
         }
     }
 

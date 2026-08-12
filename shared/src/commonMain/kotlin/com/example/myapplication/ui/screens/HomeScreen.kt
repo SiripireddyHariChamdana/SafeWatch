@@ -29,12 +29,13 @@ import com.example.myapplication.getPlatform
 @Composable
 fun HomeScreen(
     onNavigateToSOS: () -> Unit,
-    onNavigateToTimer: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToVoiceNotes: () -> Unit,
     onNavigateToFakeCall: () -> Unit,
     onNavigateToLiveTracking: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToContacts: () -> Unit,
     viewModel: AuthViewModel = viewModel { AuthViewModel() }
 ) {
     val userProfile by viewModel.userProfile
@@ -42,7 +43,6 @@ fun HomeScreen(
 
     // Handle Permissions Once on Home Screen Entry
     getPlatform().PermissionManager {
-        println("📡 HomeScreen: Permissions granted, starting service...")
         getPlatform().startLocationService()
     }
 
@@ -54,97 +54,134 @@ fun HomeScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Start
         ) {
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
-            // User Info Bar
+            // Header Section
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text(
-                        text = "Hello, ${userProfile?.full_name?.split(" ")?.firstOrNull() ?: "User"}",
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "ShadowGuard",
+                        color = NeonBlue,
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-1).sp
                     )
                     Text(
-                        text = "Protection Active",
-                        color = NeonBlue,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "GPS: ${locationUpdate?.latitude?.let { "%.4f".format(it) } ?: "Searching..."}, ${locationUpdate?.longitude?.let { "%.4f".format(it) } ?: ""}",
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
                 
-                IconButton(
+                Surface(
                     onClick = onNavigateToSettings,
-                    modifier = Modifier.background(Color.White.copy(alpha = 0.05f), CircleShape)
+                    modifier = Modifier.size(50.dp),
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.1f)
                 ) {
-                    Icon(Icons.Default.Settings, null, tint = Color.White)
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Settings, null, tint = NeonBlue, modifier = Modifier.size(24.dp))
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // BIG SOS BUTTON
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .clip(CircleShape)
-                    .background(Color.Red.copy(alpha = 0.1f))
-                    .clickable { onNavigateToSOS() },
-                contentAlignment = Alignment.Center
+            // TOP ACTIONS ROW
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Surface(
-                    modifier = Modifier.size(160.dp),
-                    shape = CircleShape,
+                MainActionCard(
+                    title = "Live GPS",
+                    icon = Icons.Default.MyLocation,
+                    color = NeonBlue,
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToLiveTracking
+                )
+                MainActionCard(
+                    title = "SOS Alert",
+                    icon = Icons.Default.Warning,
                     color = Color.Red,
-                    shadowElevation = 20.dp
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.WifiTethering, null, tint = Color.White, modifier = Modifier.size(48.dp))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("SOS", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
-                    }
-                }
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToSOS
+                )
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "Core Features",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // FEATURE GRID
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                HomeActionCard("Live GPS", Icons.Default.LocationOn, NeonBlue, Modifier.weight(1f)) { onNavigateToLiveTracking() }
-                HomeActionCard("Safety Timer", Icons.Default.Timer, NeonPurple, Modifier.weight(1f)) { onNavigateToTimer() }
+                FeatureGridCard("Emergency Contacts", Icons.Default.People, NeonPurple, Modifier.weight(1f)) { onNavigateToContacts() }
+                FeatureGridCard("Location History", Icons.Default.History, Color.White.copy(alpha = 0.6f), Modifier.weight(1f)) { onNavigateToHistory() }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                HomeActionCard("History", Icons.Default.History, Color.Gray, Modifier.weight(1f)) { onNavigateToHistory() }
-                HomeActionCard("Voice Notes", Icons.Default.Mic, SuccessGreen, Modifier.weight(1f)) { onNavigateToVoiceNotes() }
+                FeatureGridCard("Voice Record", Icons.Default.Mic, NeonBlue, Modifier.weight(1f)) { onNavigateToVoiceNotes() }
+                FeatureGridCard("Fake Call", Icons.Default.Call, SuccessGreen, Modifier.weight(1f)) { onNavigateToFakeCall() }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(120.dp))
+        }
 
-            HomeActionCard("Fake Call", Icons.Default.Call, Color.White, Modifier.fillMaxWidth()) { onNavigateToFakeCall() }
-
-            Spacer(modifier = Modifier.height(100.dp))
+        // BOTTOM NAV PILL
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 32.dp)
+                .width(300.dp)
+                .height(80.dp)
+                .clip(RoundedCornerShape(40.dp))
+                .background(Color.White.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Home, 
+                    null, 
+                    tint = NeonBlue, 
+                    modifier = Modifier.size(32.dp).clickable { }
+                )
+                Icon(
+                    Icons.Default.Person, 
+                    null, 
+                    tint = Color.White.copy(alpha = 0.3f), 
+                    modifier = Modifier.size(32.dp).clickable { onNavigateToProfile() }
+                )
+            }
         }
     }
 }
 
 @Composable
-fun HomeActionCard(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    Card(
-        modifier = modifier.height(100.dp).clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+fun MainActionCard(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(160.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = Color.White.copy(alpha = 0.05f),
         border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.2f))
     ) {
         Column(
@@ -152,9 +189,35 @@ fun HomeActionCard(title: String, icon: ImageVector, color: Color, modifier: Mod
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Box(
+                modifier = Modifier.size(56.dp).clip(CircleShape).background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(32.dp))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun FeatureGridCard(title: String, icon: ImageVector, color: Color, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(130.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White.copy(alpha = 0.05f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
             Icon(icon, null, tint = color, modifier = Modifier.size(32.dp))
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

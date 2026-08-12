@@ -19,80 +19,103 @@ import kotlinx.coroutines.launch
 
 /**
  * Background SMS Relay Synchronizer (Production Grade)
- * Listens for requests from the Web SPA and sends native SMS alerts.
+ * Listens for requests from the Web Dashboard and triggers physical SMS alerts.
  */
 object SmsRelaySync {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isSyncing = false
     private const val TAG = "SmsRelaySync"
+    private var activeChannel: io.github.jan.supabase.realtime.RealtimeChannel? = null
 
     fun startSync(userId: String) {
+        Log.i(TAG, "🔍 startSync called with ID: $userId")
         if (isSyncing || userId.isEmpty()) {
-            Log.d(TAG, "Sync already active or invalid userId ($userId)")
+            Log.d(TAG, "Sync already active or invalid userId ($userId). Skipping init.")
             return
         }
         isSyncing = true
         
-        Log.i(TAG, "📡 Initializing SMS Relay for User: $userId")
+        Log.i(TAG, "📡 CRITICAL: Initializing SMS Relay Listener for User: $userId")
         
         val client = SupabaseManager.client
-        // Use a unique channel name per user to avoid collisions
-        val channel = client.realtime.channel("relay_v2_$userId")
         
-        // Listen for NEW relay requests
+        // Use a persistent channel name
+        val channel = client.realtime.channel("safewatch_relay_v3_$userId")
+        activeChannel = channel
+        
+        // Listen for ALL changes to 'sms_relay' table
         channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "sms_relay"
-            // Note: Filter depends on Supabase Realtime configuration (must be enabled on table)
         }.onEach { action ->
-            Log.d(TAG, "🔔 Realtime Event Received: ${action.javaClass.simpleName}")
+            Log.d(TAG, "🔔 REALTIME EVENT: ${action.javaClass.simpleName}")
             
-            if (action is PostgresAction.Insert) {
-                val data = action.record
-                val reqUserId = data["user_id"]?.toString()?.trim()?.replace("\"", "")
-                
-                if (reqUserId == userId) {
+            try {
+                if (action is PostgresAction.Insert) {
+                    val data = action.record
+                    Log.i(TAG, "📦 NEW RELAY RECORD RECEIVED: $data")
+                    
+                    val rawUserId = data["user_id"]?.toString()?.trim()?.replace("\"", "")
                     val phone = data["phone"]?.toString()?.trim()?.replace("\"", "")
                     val message = data["message"]?.toString()?.trim()?.replace("\"", "")
                     
-                    if (!phone.isNullOrEmpty() && !message.isNullOrEmpty()) {
-                        Log.i(TAG, "📤 RELAY TRIGGERED: Sending SMS to $phone")
-                        sendSmsInternal(phone, message)
+                    Log.d(TAG, "🔍 ID CHECK: Incoming[$rawUserId] vs Target[$userId]")
+                    
+                    // Case-insensitive matching and trimming to prevent UUID mismatch
+                    if (rawUserId?.equals(userId, ignoreCase = true) == true) {
+                        if (!phone.isNullOrEmpty() && !message.isNullOrEmpty()) {
+                            Log.i(TAG, "🚀 MATCH FOUND! Triggering SMS to $phone")
+                            sendSmsInternal(phone, message)
+                        } else {
+                            Log.w(TAG, "⚠️ Received relay record but phone or message is missing")
+                        }
+                    } else {
+                        Log.d(TAG, "ℹ️ Ignored relay: Record is for another user ($rawUserId)")
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ FATAL: Error parsing relay event: ${e.message}")
             }
         }.launchIn(scope)
 
+        // Persistent Connection Management
         scope.launch {
             while (true) {
                 try {
-                    if (client.realtime.status.value != Realtime.Status.CONNECTED) {
-                        Log.d(TAG, "Realtime status: ${client.realtime.status.value}. Connecting...")
+                    val status = client.realtime.status.value
+                    Log.d(TAG, "📡 Current Connection Status: $status")
+
+                    if (status != Realtime.Status.CONNECTED) {
+                        Log.i(TAG, "🔄 Realtime disconnected. Reconnecting...")
                         client.realtime.connect()
                     }
+                    
                     channel.subscribe()
-                    Log.d(TAG, "✅ SMS Relay Channel Subscribed")
-                    break // Exit loop on success
+                    Log.i(TAG, "✅ SMS RELAY ACTIVE: Waiting for web signals...")
+                    
+                    // Stay in loop but wait longer between checks
+                    delay(30000) 
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Connection Error: ${e.message}. Retrying in 5s...")
-                    delay(5000)
+                    Log.e(TAG, "❌ CONNECTION ERROR: ${e.message}. Retrying in 10s...")
+                    delay(10000)
                 }
             }
         }
     }
 
     private fun sendSmsInternal(phone: String, message: String) {
+        Log.i(TAG, "📠 sendSmsInternal: Target=$phone")
         try {
-            // Re-check context availability
             val context = androidContext
             if (context != null) {
+                Log.d(TAG, "📠 Handing to platform...")
                 val platform = AndroidPlatform(context)
                 platform.sendNativeSms(phone, message)
-                Log.i(TAG, "✅ SMS Handed to OS")
+                Log.i(TAG, "✅ SUCCESS: SMS Handed to Android OS for transmission")
             } else {
-                Log.e(TAG, "❌ CRITICAL: androidContext is NULL in background")
+                Log.e(TAG, "❌ SYSTEM ERROR: androidContext is NULL. Cannot send SMS.")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ SMS Send Error: ${e.message}")
+            Log.e(TAG, "❌ OS ERROR: Failed to dispatch SMS: ${e.message}")
         }
     }
 }

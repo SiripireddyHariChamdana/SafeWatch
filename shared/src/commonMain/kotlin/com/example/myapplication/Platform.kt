@@ -26,6 +26,8 @@ interface Platform {
     fun PermissionManager(onAllGranted: () -> Unit)
 
     fun playAudio(url: String)
+    fun toggleAudio(url: String): Boolean
+    fun stopAudio()
 
     fun startManualRecording(): String?
     fun stopManualRecording(): String?

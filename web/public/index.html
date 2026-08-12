@@ -305,6 +305,14 @@
         /* THEME CIRCLE */
         .theme-circle { width: 12px; height: 12px; border-radius: 50%; margin-right: 16px; }
 
+        /* HARDWARE TRIGGERS ALIGNMENT */
+        #hardware-screen .settings-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
         /* MODAL STYLES */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -390,9 +398,9 @@
             <div class="section-title">Core Features</div>
 
             <div class="features-grid">
-                <div class="feature-item" onclick="showScreen('timer-screen')">
-                    <i style="color: #BF5AF2">⏱️</i>
-                    <span>Safety Timer</span>
+                <div class="feature-item" onclick="showContacts()">
+                    <i style="color: #BD00FF">👥</i>
+                    <span>Emergency Circle</span>
                 </div>
                 <div class="feature-item" onclick="showHistory()">
                     <i style="color: #9CA3AF">🕒</i>
@@ -501,11 +509,12 @@
             </div>
 
             <div class="avatar-container">
-                <div class="avatar-circle">
+                <div class="avatar-circle" onclick="document.getElementById('avatar-input').click()">
                     <div id="avatar-placeholder" style="font-size: 64px; color: var(--neon-blue);">👤</div>
                     <img id="avatar-img" class="avatar-image" src="" style="display:none;" alt="Profile Avatar">
                 </div>
-                <button class="camera-badge">📷</button>
+                <button class="camera-badge" onclick="document.getElementById('avatar-input').click()">📷</button>
+                <input type="file" id="avatar-input" style="display:none;" accept="image/*" onchange="handleAvatarUpload(this)">
             </div>
 
             <div class="profile-input-container">
@@ -595,54 +604,30 @@
             <p id="call-status" style="margin-top: 24px; color: var(--success-green); font-size: 14px; display: none;"></p>
         </div>
 
-        <!-- 8. FAKE CALL SCREEN (INCOMING) -->
+        <!-- 8. FAKE CALL SCREEN (INCOMING & ACTIVE) -->
         <div id="fake-call-screen" class="screen">
-            <div class="fake-call-header">Incoming Call</div>
-            <div class="fake-call-number">Home / Family</div>
-            <div class="call-buttons">
-                <div class="call-btn decline" onclick="showScreen('home-screen')">✕</div>
-                <div class="call-btn answer" onclick="showScreen('home-screen')">📞</div>
-            </div>
-        </div>
-
-        <!-- 9. TIMER SCREEN -->
-        <div id="timer-screen" class="screen">
-            <div class="settings-header">
-                <button class="back-btn" onclick="showScreen('home-screen')">←</button>
-                <div>
-                    <div class="settings-item-title" style="font-size: 24px;">Safety Timer</div>
-                    <div class="settings-item-subtitle">Auto SOS if timer reaches zero</div>
+            <div id="incoming-call-ui" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                <div class="fake-call-header">Incoming Call</div>
+                <div class="fake-call-number" id="display-caller-name">Home / Family</div>
+                <div class="call-buttons">
+                    <div class="call-btn decline" onclick="showScreen('home-screen')">✕</div>
+                    <div class="call-btn answer" onclick="answerFakeCall()">📞</div>
                 </div>
             </div>
 
-            <div class="timer-circle" style="margin-top: auto; margin-bottom: auto;">
-                <div class="timer-display" id="timer-display">10:00</div>
-                <div class="timer-status" id="timer-status">STANDBY</div>
-            </div>
+            <div id="active-call-ui" style="display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                <div class="fake-call-header">Active Call</div>
+                <div class="fake-call-number" id="active-caller-name">Home / Family</div>
+                <div id="call-timer" style="font-size: 24px; font-weight: bold; margin-bottom: 60px; color: var(--success-green);">00:00</div>
 
-            <div id="timer-setup-ui" class="timer-setup">
-                <div class="timer-presets">
-                    <div class="timer-preset" onclick="setTimerPreset(60, this)">1m</div>
-                    <div class="timer-preset" onclick="setTimerPreset(300, this)">5m</div>
-                    <div class="timer-preset active-preset" onclick="setTimerPreset(600, this)">10m</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-bottom: 80px; opacity: 0.8;">
+                    <div style="text-align: center;"><div style="font-size: 24px;">🔇</div><div style="font-size: 10px; margin-top: 5px;">Mute</div></div>
+                    <div style="text-align: center;"><div style="font-size: 24px;">🔢</div><div style="font-size: 10px; margin-top: 5px;">Keypad</div></div>
+                    <div style="text-align: center;"><div style="font-size: 24px;">🔊</div><div style="font-size: 10px; margin-top: 5px;">Speaker</div></div>
                 </div>
 
-                <div class="settings-section-title" style="text-align: center; margin-bottom: 12px;">CUSTOM DURATION</div>
-                <div class="timer-inputs">
-                    <div class="timer-input-box">
-                        <input type="number" id="timer-min" class="timer-num-input" value="10" min="0" max="999">
-                        <span class="timer-input-label">MIN</span>
-                    </div>
-                    <div style="font-size: 32px; font-weight: bold;">:</div>
-                    <div class="timer-input-box">
-                        <input type="number" id="timer-sec" class="timer-num-input" value="00" min="0" max="59">
-                        <span class="timer-input-label">SEC</span>
-                    </div>
-                </div>
-                <button class="btn-gradient" id="timer-btn" onclick="toggleTimer()">Activate Timer</button>
+                <div class="call-btn decline" onclick="endFakeCall()">✕</div>
             </div>
-
-            <button class="btn-gradient" id="timer-stop-btn" style="display:none; background: var(--success-green); margin-bottom: 48px;" onclick="toggleTimer()">I AM SAFE (STOP)</button>
         </div>
 
         <!-- 10. LIST SCREENS (HISTORY, VAULT, CONTACTS) -->
@@ -809,8 +794,7 @@
             <div class="modal-content">
                 <h2 style="margin-top:0">Add Member</h2>
                 <input type="text" id="new-contact-name" placeholder="Full Name" style="margin-bottom:12px">
-                <input type="text" id="new-contact-phone" placeholder="Phone Number" style="margin-bottom:12px">
-                <input type="text" id="new-contact-rel" placeholder="Relationship (e.g. Brother)" style="margin-bottom:24px">
+                <input type="text" id="new-contact-phone" placeholder="Phone Number" style="margin-bottom:24px">
                 <button class="btn-gradient" onclick="handleAddContact()">Add to Circle</button>
                 <button class="logout-btn" onclick="closeModal('add-contact-modal')" style="width:100%">Cancel</button>
             </div>
@@ -823,7 +807,7 @@
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kc3p5cWFic2xqYnJqZmNpbXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwMDMwMzMsImV4cCI6MjEwMTU3OTAzM30.g_xrYF9H5xo3wYXBFKPwdnNdn4lNPCNkjeWbwZuKNBM";
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, map, marker, sosInterval, timerInterval, userLat, userLng;
+        let currentUser = null, map, marker, myLocationMarker, sosInterval, timerInterval, userLat, userLng;
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -948,6 +932,7 @@
                     currentUser = session.user;
                     loadProfileData();
                     showScreen('home-screen');
+                    requestPermissions(); // Ensure permissions on session resume
                     startLocationSync();
                 } else {
                     showScreen('login-screen');
@@ -963,9 +948,12 @@
             if (error) {
                 alert(error.message);
             } else {
-                // Request permissions immediately after successful login (User Gesture context)
+                currentUser = data.user;
+                // Request permissions immediately within the user gesture context
                 await requestPermissions();
-                location.reload();
+                loadProfileData();
+                showScreen('home-screen');
+                startLocationSync();
             }
         }
 
@@ -976,8 +964,16 @@
             if (navigator.geolocation) {
                 await new Promise((resolve) => {
                     navigator.geolocation.getCurrentPosition(
-                        () => resolve(),
-                        () => resolve()
+                        (pos) => {
+                            userLat = pos.coords.latitude;
+                            userLng = pos.coords.longitude;
+                            console.log("📍 Initial GPS captured:", userLat, userLng);
+                            resolve();
+                        },
+                        (err) => {
+                            console.warn("GPS access denied:", err);
+                            resolve();
+                        }
                     );
                 });
             }
@@ -986,6 +982,7 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop()); // Release mic immediately
+                console.log("🎙️ Microphone access granted.");
             } catch (e) {
                 console.warn("Microphone access not granted.");
             }
@@ -1054,10 +1051,44 @@
                 phone: document.getElementById('prof-phone').value,
                 dob: document.getElementById('prof-dob').value,
                 home_address: document.getElementById('prof-addr').value,
+                avatar_url: document.getElementById('avatar-img').src !== window.location.href ? document.getElementById('avatar-img').src : null,
                 updated_at: new Date()
             };
             const { error } = await client.from('users').upsert(updates);
             if (error) alert(error.message); else alert("Profile updated successfully!");
+        }
+
+        async function handleAvatarUpload(input) {
+            if (!input.files || input.files.length === 0) return;
+
+            const file = input.files[0];
+            const fileName = `avatar_${currentUser.id}.jpg`;
+            const filePath = `${fileName}`; // Base directory for avatars
+
+            showSyncStatus("UPLOADING_AVATAR: Syncing to cloud...");
+
+            const { data, error } = await client.storage
+                .from('avatars')
+                .upload(filePath, file, { upsert: true });
+
+            if (error) {
+                alert("Upload failed: " + error.message);
+                hideSyncStatus();
+            } else {
+                const { data: { publicUrl } } = client.storage
+                    .from('avatars')
+                    .getPublicUrl(filePath);
+
+                // Update UI immediately
+                document.getElementById('avatar-placeholder').style.display = 'none';
+                document.getElementById('avatar-img').style.display = 'block';
+                document.getElementById('avatar-img').src = publicUrl;
+
+                // Persist to user record
+                await client.from('users').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+
+                showSyncStatus("✅ AVATAR_SUCCESS: Profile photo synced", 2000);
+            }
         }
 
         // SOS LOGIC
@@ -1072,8 +1103,10 @@
                     clearInterval(sosInterval);
 
                     // 1. Create alert in Supabase
+                    const cleanUserId = currentUser.id.toString().trim();
+
                     await client.from('sos_alerts').insert({
-                        user_id: currentUser.id,
+                        user_id: cleanUserId,
                         latitude: userLat,
                         longitude: userLng,
                         trigger_type: 'WEB_MANUAL',
@@ -1081,20 +1114,31 @@
                     });
 
                     // 2. Fetch Contacts and trigger SMS Relay
-                    const { data: contacts } = await client.from('emergency_contacts').select('contact_phone').eq('user_id', currentUser.id);
+                    const { data: contacts } = await client.from('emergency_contacts').select('contact_phone').eq('user_id', cleanUserId);
 
                     if (contacts && contacts.length > 0) {
-                        const trackingLink = `https://majestic-pudding-3979e7.netlify.app/?id=${currentUser.id}`;
+                        const trackingLink = `https://majestic-pudding-3979e7.netlify.app/?id=${cleanUserId}`;
                         const smsMessage = `🚨 EMERGENCY SOS! I need help. Track my live location here: ${trackingLink}`;
 
+                        let relaySuccess = true;
                         for (const contact of contacts) {
-                            await client.from('sms_relay').insert({
-                                user_id: currentUser.id,
+                            const { error: relayErr } = await client.from('sms_relay').insert({
+                                user_id: cleanUserId,
                                 phone: contact.contact_phone,
-                                message: smsMessage
+                                message: smsMessage,
+                                created_at: new Date().toISOString()
                             });
+                            if (relayErr) {
+                                console.error("❌ SMS Relay Insert Failed:", relayErr);
+                                relaySuccess = false;
+                            }
                         }
-                        alert("EMERGENCY SOS BROADCASTED & SMS RELAY INITIATED");
+
+                        if (relaySuccess) {
+                            alert("EMERGENCY SOS BROADCASTED & SMS RELAY INITIATED");
+                        } else {
+                            alert("SOS Logged but SMS Relay encountered an error. Please check your network or contacts.");
+                        }
                     } else {
                         alert("EMERGENCY SOS BROADCASTED (No contacts found for SMS)");
                     }
@@ -1166,9 +1210,11 @@
         }
 
         async function triggerTimerSOS() {
+            const cleanUserId = currentUser.id.toString().trim();
+
             // 1. Create Alert
             await client.from('sos_alerts').insert({
-                user_id: currentUser.id,
+                user_id: cleanUserId,
                 latitude: userLat,
                 longitude: userLng,
                 trigger_type: 'TIMER_EXPIRED',
@@ -1176,15 +1222,16 @@
             });
 
             // 2. Trigger SMS Relay
-            const { data: contacts } = await client.from('emergency_contacts').select('contact_phone').eq('user_id', currentUser.id);
+            const { data: contacts } = await client.from('emergency_contacts').select('contact_phone').eq('user_id', cleanUserId);
             if (contacts && contacts.length > 0) {
-                const trackingLink = `https://majestic-pudding-3979e7.netlify.app/?id=${currentUser.id}`;
+                const trackingLink = `https://majestic-pudding-3979e7.netlify.app/?id=${cleanUserId}`;
                 const smsMessage = `⚠️ SAFETY TIMER EXPIRED! I haven't checked in. Track my location: ${trackingLink}`;
                 for (const contact of contacts) {
                     await client.from('sms_relay').insert({
-                        user_id: currentUser.id,
+                        user_id: cleanUserId,
                         phone: contact.contact_phone,
-                        message: smsMessage
+                        message: smsMessage,
+                        created_at: new Date().toISOString()
                     });
                 }
             }
@@ -1201,19 +1248,28 @@
             const content = document.getElementById('list-content');
             content.innerHTML = "<div class='loader' style='margin: 40px auto;'></div>";
 
-            const { data } = await client.from('location_history').select('*').eq('user_id', currentUser.id).order('captured_at', { ascending: false });
+            const { data, error } = await client.from('location_history').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("❌ History fetch error:", error);
+                content.innerHTML = "<div style='text-align:center; color: var(--red-sos); margin-top:40px;'>Failed to load history.</div>";
+                return;
+            }
 
             if (data && data.length > 0) {
-                content.innerHTML = data.map(item => `
-                    <div class="list-item" onclick="showMiniMap(${item.latitude}, ${item.longitude})">
-                        <div class="list-item-info">
-                            <div class="list-item-title">Logged Position</div>
-                            <div class="list-item-subtitle">${new Date(item.captured_at).toLocaleString()}</div>
-                            <div class="list-item-coords">${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}</div>
+                content.innerHTML = data.map(item => {
+                    const time = item.captured_at || item.created_at || item.updated_at;
+                    return `
+                        <div class="list-item" onclick="showMiniMap(${item.latitude}, ${item.longitude})">
+                            <div class="list-item-info">
+                                <div class="list-item-title">Logged Position</div>
+                                <div class="list-item-subtitle">${new Date(time).toLocaleString()}</div>
+                                <div class="list-item-coords">${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}</div>
+                            </div>
+                            <div style="color: var(--neon-blue); font-size: 20px;">›</div>
                         </div>
-                        <div style="color: var(--neon-blue); font-size: 20px;">›</div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } else {
                 content.innerHTML = "<div style='text-align:center; opacity:0.5; margin-top:40px;'>No history found.</div>";
             }
@@ -1235,11 +1291,34 @@
                             <div class="list-item-title">${item.file_name}</div>
                             <div class="list-item-subtitle">Recorded on ${new Date(item.created_at).toLocaleDateString()}</div>
                         </div>
-                        <button class="play-btn" onclick="window.open('https://mdszyqabsljbrjfcimss.supabase.co/storage/v1/object/public/voice-recordings/${item.storage_path}?apikey=${SUPABASE_KEY}')">▶</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="play-btn" onclick="window.open('https://mdszyqabsljbrjfcimss.supabase.co/storage/v1/object/public/voice-recordings/${item.storage_path}?apikey=${SUPABASE_KEY}')">▶</button>
+                            <button class="delete-btn" onclick="handleDeleteRecording('${item.id}', '${item.storage_path}')">🗑️</button>
+                        </div>
                     </div>
                 `).join('');
             } else {
                 content.innerHTML = "<div style='text-align:center; opacity:0.5; margin-top:40px;'>Vault is empty.</div>";
+            }
+        }
+
+        async function handleDeleteRecording(id, storagePath) {
+            if(!confirm("Delete this recording?")) return;
+
+            showSyncStatus("DELETING: Removing from cloud...");
+
+            // 1. Delete from Storage
+            const { error: storageError } = await client.storage.from('voice-recordings').remove([storagePath]);
+
+            // 2. Delete from Database
+            const { error: dbError } = await client.from('evidence_vault').delete().eq('id', id);
+
+            if(storageError || dbError) {
+                alert("Delete failed: " + (storageError?.message || dbError?.message));
+                hideSyncStatus();
+            } else {
+                showSyncStatus("✅ DELETED: Vault synced", 2000);
+                showVault();
             }
         }
 
@@ -1257,7 +1336,7 @@
                     <div class="list-item">
                         <div class="list-item-info">
                             <div class="list-item-title">${item.contact_name}</div>
-                            <div class="list-item-subtitle">${item.contact_phone} (${item.relationship})</div>
+                            <div class="list-item-subtitle">${item.contact_phone}</div>
                         </div>
                         <button class="delete-btn" onclick="handleDeleteContact('${item.id}')">🗑️</button>
                     </div>
@@ -1274,15 +1353,13 @@
         async function handleAddContact() {
             const name = document.getElementById('new-contact-name').value;
             const phone = document.getElementById('new-contact-phone').value;
-            const rel = document.getElementById('new-contact-rel').value;
 
             if(!name || !phone) return alert("Fill Name and Phone");
 
             const { error } = await client.from('emergency_contacts').insert({
                 user_id: currentUser.id,
                 contact_name: name,
-                contact_phone: phone,
-                relationship: rel
+                contact_phone: phone
             });
 
             if(error) alert(error.message);
@@ -1314,7 +1391,7 @@
 
         // FAKE CALL LOGIC
         let scheduledCallTime = 10;
-        let callTimeout;
+        let callTimeout, callTimerInterval;
 
         function setCallPreset(seconds, el) {
             scheduledCallTime = seconds;
@@ -1331,10 +1408,31 @@
 
             clearTimeout(callTimeout);
             callTimeout = setTimeout(() => {
-                document.querySelector('#fake-call-screen .fake-call-number').innerText = name;
+                document.getElementById('display-caller-name').innerText = name;
+                document.getElementById('active-caller-name').innerText = name;
+                document.getElementById('incoming-call-ui').style.display = 'flex';
+                document.getElementById('active-call-ui').style.display = 'none';
                 showScreen('fake-call-screen');
                 status.style.display = 'none';
             }, scheduledCallTime * 1000);
+        }
+
+        function answerFakeCall() {
+            document.getElementById('incoming-call-ui').style.display = 'none';
+            document.getElementById('active-call-ui').style.display = 'flex';
+            let seconds = 0;
+            clearInterval(callTimerInterval);
+            callTimerInterval = setInterval(() => {
+                seconds++;
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                document.getElementById('call-timer').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function endFakeCall() {
+            clearInterval(callTimerInterval);
+            showScreen('home-screen');
         }
 
         function showFakeCall() {
@@ -1359,7 +1457,25 @@
 
             map = L.map('map-container', { zoomControl: false, attributionControl: false }).setView([0, 0], 2);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            // Tracked User Marker (Target)
             marker = L.marker([0, 0]).addTo(map);
+
+            // Blue Marker for MY location (Browser User)
+            myLocationMarker = L.circleMarker([0, 0], {
+                radius: 8,
+                fillColor: "#00F2FF",
+                color: "#FFFFFF",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(map);
+
+            // If we already have user coordinates, position the blue dot and center map
+            if (userLat && userLng) {
+                myLocationMarker.setLatLng([userLat, userLng]);
+                map.setView([userLat, userLng], 15);
+            }
 
             // Listen for ALL changes (INSERT/UPDATE) to user_locations for this target
             client.channel('live-tracking-' + userId)
@@ -1385,8 +1501,8 @@
         }
 
         function updateUI(lat, lng) {
-            userLat = lat; userLng = lng;
             if (marker) marker.setLatLng([lat, lng]);
+            // Only auto-center if it's the tracked user (or we want to follow them)
             if (map) map.setView([lat, lng], 16);
 
             const signalText = document.getElementById('track-signal-text');
@@ -1406,13 +1522,31 @@
                 navigator.geolocation.watchPosition(pos => {
                     const { latitude, longitude } = pos.coords;
                     console.log("📡 Pushing GPS to Cloud:", latitude, longitude);
+                    userLat = latitude; userLng = longitude;
+
+                    // Update the blue dot on the map if it's currently showing
+                    if (myLocationMarker) myLocationMarker.setLatLng([latitude, longitude]);
+
+                    // Sync to live table
                     client.from('user_locations').upsert({
                         user_id: currentUser.id,
                         latitude,
                         longitude,
                         updated_at: new Date()
                     });
-                    updateUI(latitude, longitude);
+
+                    // Log to history table for web movements too
+                    client.from('location_history').insert({
+                        user_id: currentUser.id,
+                        latitude,
+                        longitude,
+                        captured_at: new Date()
+                    });
+
+                    if(document.getElementById('home-gps')) {
+                        document.getElementById('home-gps').innerText = `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                        document.getElementById('home-gps').style.color = "var(--neon-blue)";
+                    }
                 }, err => {
                     console.error("⚠️ Geolocation Error:", err);
                 }, {
