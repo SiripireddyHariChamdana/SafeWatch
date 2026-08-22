@@ -115,7 +115,7 @@ fun LoginScreenContent(
             Spacer(modifier = Modifier.height(48.dp))
 
             // Fields
-            ShadowGuardTextField(
+            SafeWatchTextField(
                 value = emailOrPhone,
                 onValueChange = { emailOrPhone = it },
                 placeholder = "Email or Phone Number",
@@ -125,7 +125,7 @@ fun LoginScreenContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ShadowGuardTextField(
+            SafeWatchTextField(
                 value = password,
                 onValueChange = { password = it },
                 placeholder = "Password",

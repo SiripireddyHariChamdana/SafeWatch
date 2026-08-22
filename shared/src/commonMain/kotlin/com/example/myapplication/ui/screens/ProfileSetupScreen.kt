@@ -46,13 +46,13 @@ fun ProfileSetupScreen(onBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            ShadowGuardTextField(name, { name = it }, "Full Name", Icons.Default.Person)
+            SafeWatchTextField(name, { name = it }, "Full Name", Icons.Default.Person)
             Spacer(modifier = Modifier.height(16.dp))
-            ShadowGuardTextField(phone, { phone = it }, "Phone Number", Icons.Default.Phone)
+            SafeWatchTextField(phone, { phone = it }, "Phone Number", Icons.Default.Phone)
             Spacer(modifier = Modifier.height(16.dp))
-            ShadowGuardTextField(bloodGroup, { bloodGroup = it }, "Blood Group", Icons.Default.Bloodtype)
+            SafeWatchTextField(bloodGroup, { bloodGroup = it }, "Blood Group", Icons.Default.Bloodtype)
             Spacer(modifier = Modifier.height(16.dp))
-            ShadowGuardTextField(address, { address = it }, "Emergency Address", Icons.Default.Home)
+            SafeWatchTextField(address, { address = it }, "Emergency Address", Icons.Default.Home)
 
             Spacer(modifier = Modifier.height(48.dp))
 

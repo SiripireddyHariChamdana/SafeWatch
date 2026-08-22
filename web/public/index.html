@@ -228,23 +228,6 @@
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .recording-text { color: var(--red-sos); font-size: 10px; font-weight: 900; letter-spacing: 0.5px; }
 
-        /* FAKE CALL SETUP */
-        #fake-call-setup-screen { background: var(--dark-navy); }
-        .preset-row { display: flex; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 40px; }
-        .preset-btn {
-            padding: 12px 20px; border-radius: 12px; background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; color: white; font-weight: bold;
-        }
-        .preset-btn.active-preset { background: rgba(76, 175, 80, 0.15); border-color: var(--success-green); color: var(--success-green); }
-
-        /* FAKE CALL INCOMING */
-        #fake-call-screen { background: black; justify-content: center; z-index: 6000; padding: 0; }
-        .fake-call-header { font-size: 20px; opacity: 0.6; margin-bottom: 10px; }
-        .fake-call-number { font-size: 44px; font-weight: 900; margin-bottom: 100px; }
-        .call-buttons { display: flex; gap: 80px; }
-        .call-btn { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
-        .call-btn.answer { background: var(--success-green); }
-        .call-btn.decline { background: var(--red-sos); }
 
         /* TIMER SCREEN */
         #timer-screen { background: #120024; justify-content: center; }
@@ -302,8 +285,19 @@
         input:checked + .slider { background-color: var(--neon-blue); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* THEME CIRCLE */
-        .theme-circle { width: 12px; height: 12px; border-radius: 50%; margin-right: 16px; }
+        /* HISTORY SCREEN */
+        #history-screen { background: var(--dark-navy); }
+        .history-map { width: 100%; height: 300px; border-radius: 24px; margin: 16px 0; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+        .date-picker-row { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 600px; margin-bottom: 16px; }
+        .date-display { background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 12px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .summary-card { background: rgba(255,255,255,0.05); border-radius: 24px; width: 100%; max-width: 600px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+        .summary-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 16px; }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-label { font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 18px; font-weight: bold; margin-top: 4px; }
+
+        #history-timeline { display: none; }
+        .section-title.timeline-header { display: none; }
 
         /* HARDWARE TRIGGERS ALIGNMENT */
         #hardware-screen .settings-card {
@@ -334,7 +328,7 @@
         <div id="splash-screen">
             <div class="splash-card"><div class="shield-icon"></div></div>
             <div class="splash-title">SafeWatch</div>
-            <div class="splash-sub">YOUR DIGITAL SHIELD</div>
+            <div class="splash-sub">PERSONAL SAFETY SYSTEM</div>
         </div>
 
         <!-- 1. LOGIN -->
@@ -375,7 +369,7 @@
         <div id="home-screen" class="screen">
             <div class="home-header">
                 <div>
-                    <h1 class="app-title">ShadowGuard</h1>
+                    <h1 class="app-title">SafeWatch</h1>
                     <div class="gps-status" id="home-gps">GPS: Searching...</div>
                     <div class="gps-status" style="color: var(--success-green); opacity: 0.8; font-size: 10px;">RELAY: ACTIVE</div>
                 </div>
@@ -402,17 +396,13 @@
                     <i style="color: #BD00FF">👥</i>
                     <span>Emergency Circle</span>
                 </div>
-                <div class="feature-item" onclick="showHistory()">
+                <div class="feature-item" onclick="showHistoryScreen()">
                     <i style="color: #9CA3AF">🕒</i>
                     <span>Location History</span>
                 </div>
                 <div class="feature-item" onclick="showVault()">
                     <i style="color: #00F2FF">🎙️</i>
                     <span>Voice Record</span>
-                </div>
-                <div class="feature-item" onclick="showFakeCall()">
-                    <i style="color: #34C759">📞</i>
-                    <span>Fake Call</span>
                 </div>
             </div>
 
@@ -498,7 +488,7 @@
                 <div class="chevron">›</div>
             </div>
 
-            <div style="margin-top: 20px; opacity: 0.3; font-size: 12px; text-align: center;">ShadowGuard v1.5.0</div>
+            <div style="margin-top: 20px; opacity: 0.3; font-size: 12px; text-align: center;">SafeWatch v1.5.0</div>
         </div>
 
         <!-- 5. PROFILE (EDIT MODE) -->
@@ -576,59 +566,6 @@
             <button class="btn-gradient" style="background: white; color: black; width: 250px; font-weight: 900;" onclick="cancelSOS()">CANCEL SOS</button>
         </div>
 
-        <!-- 8. FAKE CALL SETUP SCREEN -->
-        <div id="fake-call-setup-screen" class="screen">
-            <div class="settings-header">
-                <button class="back-btn" onclick="showScreen('home-screen')">←</button>
-                <div class="settings-title">Fake Call Setup</div>
-            </div>
-
-            <div style="text-align: center; margin-top: 32px; margin-bottom: 48px; width: 100%; max-width: 600px;">
-                <div class="splash-card" style="width: 100px; height: 100px; margin: 0 auto 24px auto; background: rgba(76, 175, 80, 0.1);"><span style="font-size: 40px; color: var(--success-green);">📞</span></div>
-                <h2 style="font-size: 22px; font-weight: bold; margin-bottom: 8px;">Simulate Incoming Call</h2>
-                <p style="color: var(--text-gray); font-size: 14px;">Helps you exit uncomfortable situations</p>
-            </div>
-
-            <div class="settings-section-title">CALLER IDENTITY</div>
-            <input type="text" id="fake-caller-name" placeholder="Caller Name (e.g. Home / Boss)" style="margin-bottom: 24px; max-width: 600px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);">
-
-            <div class="settings-section-title">SCHEDULE TIMER</div>
-            <div class="preset-row">
-                <button class="preset-btn active-preset" onclick="setCallPreset(10, this)">10s</button>
-                <button class="preset-btn" onclick="setCallPreset(30, this)">30s</button>
-                <button class="preset-btn" onclick="setCallPreset(60, this)">1m</button>
-                <button class="preset-btn" onclick="setCallPreset(300, this)">5m</button>
-            </div>
-
-            <button class="btn-gradient" id="schedule-call-btn" onclick="scheduleFakeCall()" style="max-width: 600px;">Schedule Fake Call</button>
-            <p id="call-status" style="margin-top: 24px; color: var(--success-green); font-size: 14px; display: none;"></p>
-        </div>
-
-        <!-- 8. FAKE CALL SCREEN (INCOMING & ACTIVE) -->
-        <div id="fake-call-screen" class="screen">
-            <div id="incoming-call-ui" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
-                <div class="fake-call-header">Incoming Call</div>
-                <div class="fake-call-number" id="display-caller-name">Home / Family</div>
-                <div class="call-buttons">
-                    <div class="call-btn decline" onclick="showScreen('home-screen')">✕</div>
-                    <div class="call-btn answer" onclick="answerFakeCall()">📞</div>
-                </div>
-            </div>
-
-            <div id="active-call-ui" style="display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
-                <div class="fake-call-header">Active Call</div>
-                <div class="fake-call-number" id="active-caller-name">Home / Family</div>
-                <div id="call-timer" style="font-size: 24px; font-weight: bold; margin-bottom: 60px; color: var(--success-green);">00:00</div>
-
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-bottom: 80px; opacity: 0.8;">
-                    <div style="text-align: center;"><div style="font-size: 24px;">🔇</div><div style="font-size: 10px; margin-top: 5px;">Mute</div></div>
-                    <div style="text-align: center;"><div style="font-size: 24px;">🔢</div><div style="font-size: 10px; margin-top: 5px;">Keypad</div></div>
-                    <div style="text-align: center;"><div style="font-size: 24px;">🔊</div><div style="font-size: 10px; margin-top: 5px;">Speaker</div></div>
-                </div>
-
-                <div class="call-btn decline" onclick="endFakeCall()">✕</div>
-            </div>
-        </div>
 
         <!-- 10. LIST SCREENS (HISTORY, VAULT, CONTACTS) -->
         <div id="list-screen" class="screen">
@@ -662,13 +599,13 @@
                 <div class="settings-title">Hardware Triggers</div>
             </div>
             <div class="settings-section-title">Silent Emergency Triggers</div>
-            <p style="color: var(--text-gray); font-size: 12px; margin-bottom: 24px; align-self: flex-start; max-width: 600px;">Configure how to trigger SOS without opening the app</p>
+            <p style="color: var(--text-gray); font-size: 12px; margin-bottom: 24px; width: 100%; max-width: 600px; text-align: left;">Configure how to trigger SOS without opening the app</p>
 
             <div class="settings-card">
                 <div class="settings-icon-box">⚡</div>
                 <div class="settings-text-box">
                     <div class="settings-item-title">Power Button SOS</div>
-                    <div class="settings-item-subtitle">Press power button 5 times rapidly</div>
+                    <div class="settings-item-subtitle">Press power button 3 times rapidly</div>
                 </div>
                 <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
             </div>
@@ -789,7 +726,51 @@
             </div>
         </div>
 
-        <!-- MODAL: ADD CONTACT -->
+        <!-- 15. HISTORY SCREEN -->
+        <div id="history-screen" class="screen">
+            <div class="settings-header">
+                <button class="back-btn" onclick="showScreen('home-screen')">←</button>
+                <div class="settings-title">Location History</div>
+                <button class="delete-btn" style="margin-left: auto; background: none; font-size: 20px;" onclick="confirmDeleteHistory()">🗑️</button>
+            </div>
+
+            <div class="date-picker-row">
+                <button class="back-btn" onclick="changeHistoryDate(-1)">❮</button>
+                <div class="date-display">
+                    <span>📅</span>
+                    <span id="history-date-text">August 13, 2026</span>
+                </div>
+                <button class="back-btn" id="next-date-btn" onclick="changeHistoryDate(1)">❯</button>
+            </div>
+
+            <div id="history-loading" style="display:none; margin: 40px 0;">Loading location history...</div>
+
+            <div id="history-content" style="width:100%; display: flex; flex-direction: column; align-items: center;">
+                <div id="history-map" class="history-map" style="height: 350px;"></div>
+
+                <div class="summary-card">
+                    <div style="font-size: 14px; font-weight: bold; color: var(--neon-blue); letter-spacing: 1px;">TRAVEL SUMMARY</div>
+                    <div class="summary-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Distance Travelled</div>
+                            <div class="stat-value" id="stat-dist">0 m</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Travel Time</div>
+                            <div class="stat-value" id="stat-time">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="history-empty" style="display:none; text-align: center; margin-top: 60px; opacity: 0.5;">
+                <div style="font-size: 60px; margin-bottom: 16px;">📍</div>
+                <h3>No Location History</h3>
+                <p>No location data was recorded for this date.</p>
+            </div>
+
+            <div style="height: 100px;"></div>
+        </div>
         <div id="add-contact-modal" class="modal">
             <div class="modal-content">
                 <h2 style="margin-top:0">Add Member</h2>
@@ -949,10 +930,10 @@
                 alert(error.message);
             } else {
                 currentUser = data.user;
-                // Request permissions immediately within the user gesture context
-                await requestPermissions();
                 loadProfileData();
                 showScreen('home-screen');
+                // Request permissions in the background after switching screens
+                requestPermissions();
                 startLocationSync();
             }
         }
@@ -1241,37 +1222,157 @@
             showScreen('home-screen');
         }
 
-        // LIST FETCHERS
-        async function showHistory() {
-            showScreen('list-screen');
-            document.getElementById('list-title').innerText = "Location History";
-            const content = document.getElementById('list-content');
-            content.innerHTML = "<div class='loader' style='margin: 40px auto;'></div>";
+        let historyDate = new Date();
+        let historyMap = null;
+        let historyPolyline = null;
+        let historyMarkers = [];
 
-            const { data, error } = await client.from('location_history').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        function showHistoryScreen() {
+            showScreen('history-screen');
+            historyDate = new Date();
+            updateHistoryDateUI();
+            fetchLocationHistory();
+        }
+
+        function updateHistoryDateUI() {
+            const options = { month: 'long', day: 'numeric', year: 'numeric' };
+            document.getElementById('history-date-text').innerText = historyDate.toLocaleDateString('en-US', options);
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const current = new Date(historyDate);
+            current.setHours(0,0,0,0);
+
+            document.getElementById('next-date-btn').style.visibility = current >= today ? 'hidden' : 'visible';
+        }
+
+        function changeHistoryDate(offset) {
+            historyDate.setDate(historyDate.getDate() + offset);
+            updateHistoryDateUI();
+            fetchLocationHistory();
+        }
+
+        async function fetchLocationHistory() {
+            document.getElementById('history-loading').style.display = 'block';
+            document.getElementById('history-content').style.display = 'none';
+            document.getElementById('history-empty').style.display = 'none';
+
+            const start = new Date(historyDate); start.setHours(0,0,0,0);
+            const end = new Date(historyDate); end.setHours(23,59,59,999);
+
+            const { data, error } = await client.from('location_history')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .gte('recorded_at', start.toISOString())
+                .lte('recorded_at', end.toISOString())
+                .order('recorded_at', { ascending: true });
+
+            document.getElementById('history-loading').style.display = 'none';
 
             if (error) {
-                console.error("❌ History fetch error:", error);
-                content.innerHTML = "<div style='text-align:center; color: var(--red-sos); margin-top:40px;'>Failed to load history.</div>";
+                console.error("Fetch History Error:", error);
                 return;
             }
 
-            if (data && data.length > 0) {
-                content.innerHTML = data.map(item => {
-                    const time = item.captured_at || item.created_at || item.updated_at;
-                    return `
-                        <div class="list-item" onclick="showMiniMap(${item.latitude}, ${item.longitude})">
-                            <div class="list-item-info">
-                                <div class="list-item-title">Logged Position</div>
-                                <div class="list-item-subtitle">${new Date(time).toLocaleString()}</div>
-                                <div class="list-item-coords">${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}</div>
-                            </div>
-                            <div style="color: var(--neon-blue); font-size: 20px;">›</div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                content.innerHTML = "<div style='text-align:center; opacity:0.5; margin-top:40px;'>No history found.</div>";
+            if (!data || data.length === 0) {
+                document.getElementById('history-empty').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('history-content').style.display = 'flex';
+            renderHistoryMap(data);
+            calculateHistoryStats(data);
+            renderHistoryTimeline(data);
+        }
+
+        function renderHistoryMap(points) {
+            if (!historyMap) {
+                historyMap = L.map('history-map', { zoomControl: false, attributionControl: false });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(historyMap);
+            }
+
+            // Clear previous
+            if (historyPolyline) historyMap.removeLayer(historyPolyline);
+            historyMarkers.forEach(m => historyMap.removeLayer(m));
+            historyMarkers = [];
+
+            const latlngs = points.map(p => [p.latitude, p.longitude]);
+
+            if (latlngs.length > 1) {
+                historyPolyline = L.polyline(latlngs, { color: '#00F2FF', weight: 4, opacity: 0.8 }).addTo(historyMap);
+            }
+
+            points.forEach((p, i) => {
+                if (i === 0 || i === points.length - 1) {
+                    const isStart = i === 0;
+                    const color = isStart ? '#4CAF50' : '#FF4B4B';
+
+                    const marker = L.circleMarker([p.latitude, p.longitude], {
+                        radius: 8,
+                        fillColor: color,
+                        color: '#FFF',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 1
+                    }).addTo(historyMap);
+                    historyMarkers.push(marker);
+                }
+            });
+
+            const bounds = L.latLngBounds(latlngs);
+            historyMap.fitBounds(bounds, { padding: [40, 40] });
+            setTimeout(() => historyMap.invalidateSize(), 200);
+        }
+
+        function calculateHistoryStats(points) {
+            const start = new Date(points[0].recorded_at);
+            const end = new Date(points[points.length - 1].recorded_at);
+
+            let totalDist = 0;
+            for (let i = 0; i < points.length - 1; i++) {
+                totalDist += calculateDistance(points[i].latitude, points[i].longitude, points[i+1].latitude, points[i+1].longitude);
+            }
+
+            document.getElementById('stat-dist').innerText = totalDist < 1000 ? `${Math.round(totalDist)} m` : `${(totalDist/1000).toFixed(2)} km`;
+
+            const timeOpts = { hour: '2-digit', minute: '2-digit' };
+            document.getElementById('stat-time').innerText = `${start.toLocaleTimeString([], timeOpts)} - ${end.toLocaleTimeString([], timeOpts)}`;
+        }
+
+        function renderHistoryTimeline(points) {
+            const container = document.getElementById('history-timeline');
+            container.innerHTML = "";
+
+            points.forEach((p, i) => {
+                const isStart = i === 0;
+                const isEnd = i === points.length - 1;
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.innerHTML = `
+                    <div class="timeline-dot ${isStart ? 'start' : (isEnd ? 'end' : '')}"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">${new Date(p.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div class="timeline-label">${isStart ? 'Starting Point' : (isEnd ? 'Ending Point' : 'Recorded Position')}</div>
+                        <div class="timeline-coords">${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}</div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        async function confirmDeleteHistory() {
+            if (confirm(`Permanently delete location history for this day?`)) {
+                const start = new Date(historyDate); start.setHours(0,0,0,0);
+                const end = new Date(historyDate); end.setHours(23,59,59,999);
+
+                const { error } = await client.from('location_history')
+                    .delete()
+                    .eq('user_id', currentUser.id)
+                    .gte('recorded_at', start.toISOString())
+                    .lte('recorded_at', end.toISOString());
+
+                if (error) alert("Delete failed: " + error.message);
+                else fetchLocationHistory();
             }
         }
 
@@ -1389,55 +1490,6 @@
             alert(`Theme ${theme} applied!`);
         }
 
-        // FAKE CALL LOGIC
-        let scheduledCallTime = 10;
-        let callTimeout, callTimerInterval;
-
-        function setCallPreset(seconds, el) {
-            scheduledCallTime = seconds;
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active-preset'));
-            el.classList.add('active-preset');
-        }
-
-        function scheduleFakeCall() {
-            const name = document.getElementById('fake-caller-name').value || "Home / Family";
-            const status = document.getElementById('call-status');
-
-            status.innerText = `Call from ${name} scheduled in ${scheduledCallTime} seconds`;
-            status.style.display = 'block';
-
-            clearTimeout(callTimeout);
-            callTimeout = setTimeout(() => {
-                document.getElementById('display-caller-name').innerText = name;
-                document.getElementById('active-caller-name').innerText = name;
-                document.getElementById('incoming-call-ui').style.display = 'flex';
-                document.getElementById('active-call-ui').style.display = 'none';
-                showScreen('fake-call-screen');
-                status.style.display = 'none';
-            }, scheduledCallTime * 1000);
-        }
-
-        function answerFakeCall() {
-            document.getElementById('incoming-call-ui').style.display = 'none';
-            document.getElementById('active-call-ui').style.display = 'flex';
-            let seconds = 0;
-            clearInterval(callTimerInterval);
-            callTimerInterval = setInterval(() => {
-                seconds++;
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                document.getElementById('call-timer').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        function endFakeCall() {
-            clearInterval(callTimerInterval);
-            showScreen('home-screen');
-        }
-
-        function showFakeCall() {
-            showScreen('fake-call-setup-screen');
-        }
 
         // TRACKING LOGIC
         function initTracking(userId) {
@@ -1517,10 +1569,12 @@
             }
         }
 
+        let lastHistoryLat = 0, lastHistoryLng = 0, lastHistoryTime = 0;
+
         function startLocationSync() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
-                    const { latitude, longitude } = pos.coords;
+                    const { latitude, longitude, accuracy } = pos.coords;
                     console.log("📡 Pushing GPS to Cloud:", latitude, longitude);
                     userLat = latitude; userLng = longitude;
 
@@ -1532,16 +1586,38 @@
                         user_id: currentUser.id,
                         latitude,
                         longitude,
-                        updated_at: new Date()
+                        updated_at: new Date().toISOString()
                     });
 
-                    // Log to history table for web movements too
-                    client.from('location_history').insert({
-                        user_id: currentUser.id,
-                        latitude,
-                        longitude,
-                        captured_at: new Date()
-                    });
+                    // Production-ready sampling: 15 meters OR 30 seconds
+                    const now = Date.now();
+                    const dist = lastHistoryLat === 0 ? 999 : calculateDistance(lastHistoryLat, lastHistoryLng, latitude, longitude);
+
+                    if (dist > 15 || (now - lastHistoryTime) > 30000) {
+                        lastHistoryLat = latitude;
+                        lastHistoryLng = longitude;
+                        lastHistoryTime = now;
+
+                        // Log to history table
+                        navigator.getBattery().then(bt => {
+                            client.from('location_history').insert({
+                                user_id: currentUser.id,
+                                latitude,
+                                longitude,
+                                accuracy: accuracy || 0,
+                                battery_level: bt ? Math.round(bt.level * 100) : null,
+                                recorded_at: new Date().toISOString()
+                            });
+                        }).catch(() => {
+                            client.from('location_history').insert({
+                                user_id: currentUser.id,
+                                latitude,
+                                longitude,
+                                accuracy: accuracy || 0,
+                                recorded_at: new Date().toISOString()
+                            });
+                        });
+                    }
 
                     if(document.getElementById('home-gps')) {
                         document.getElementById('home-gps').innerText = `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
@@ -1555,6 +1631,19 @@
                     timeout: 5000
                 });
             }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // metres
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
     </script>
 </body>

@@ -17,13 +17,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.*
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HardwareTriggerScreen(onBack: () -> Unit) {
-    var powerTriggerEnabled by remember { mutableStateOf(true) }
-    var shakeTriggerEnabled by remember { mutableStateOf(true) }
+    val platform = com.example.myapplication.getPlatform()
+    var powerTriggerEnabled by remember { 
+        mutableStateOf(platform.getPersistedSetting("power_trigger_enabled", "true") == "true") 
+    }
+    var shakeTriggerEnabled by remember { 
+        mutableStateOf(platform.getPersistedSetting("shake_trigger_enabled", "true") == "true") 
+    }
     var shakeSensitivity by remember { mutableStateOf(0.7f) }
+
+    val onTogglePower: (Boolean) -> Unit = { enabled ->
+        powerTriggerEnabled = enabled
+        platform.persistSetting("power_trigger_enabled", enabled.toString())
+        platform.refreshSafetyServiceSettings()
+    }
+
+    val onToggleShake: (Boolean) -> Unit = { enabled ->
+        shakeTriggerEnabled = enabled
+        platform.persistSetting("shake_trigger_enabled", enabled.toString())
+        platform.refreshSafetyServiceSettings()
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(DarkNavy)) {
         SecurityGridBackground()
@@ -62,10 +78,10 @@ fun HardwareTriggerScreen(onBack: () -> Unit) {
 
             TriggerToggleCard(
                 title = "Power Button SOS",
-                description = "Press power button 5 times rapidly to trigger SOS",
+                description = "Press power button 3 times rapidly to trigger SOS",
                 icon = Icons.Default.PowerSettingsNew,
                 enabled = powerTriggerEnabled,
-                onToggle = { powerTriggerEnabled = it }
+                onToggle = onTogglePower
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -75,7 +91,7 @@ fun HardwareTriggerScreen(onBack: () -> Unit) {
                 description = "Rapidly shake your device to trigger SOS",
                 icon = Icons.Default.Vibration,
                 enabled = shakeTriggerEnabled,
-                onToggle = { shakeTriggerEnabled = it }
+                onToggle = onToggleShake
             )
 
             if (shakeTriggerEnabled) {

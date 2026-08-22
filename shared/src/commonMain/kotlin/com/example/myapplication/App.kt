@@ -6,7 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.navigation.Screen
 import com.example.myapplication.ui.screens.*
-import com.example.myapplication.ui.theme.ShadowGuardTheme
+import com.example.myapplication.ui.theme.SafeWatchTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.ui.auth.AuthViewModel
 
@@ -17,10 +17,19 @@ fun App() {
     val isLoggedIn by authViewModel.isLoggedIn
     val isInitialLoaded by authViewModel.isInitialSessionLoaded
 
-    ShadowGuardTheme(userTheme = currentTheme) {
+    SafeWatchTheme(userTheme = currentTheme) {
         val navController = rememberNavController()
 
         // Reactive Navigation: The "Brain" of the App
+        LaunchedEffect(isLoggedIn, isInitialLoaded) {
+            // Safety timeout: If session doesn't load in 5 seconds, assume not logged in
+            kotlinx.coroutines.delay(5000)
+            if (!isInitialLoaded) {
+                println("⚠️ Nav: Initial session load timeout. Falling back.")
+                // We don't force it here yet, let AuthViewModel do its job, but this is for debugging
+            }
+        }
+
         LaunchedEffect(isLoggedIn, isInitialLoaded) {
             if (!isInitialLoaded) return@LaunchedEffect
 
@@ -32,7 +41,7 @@ fun App() {
                     currentRoute == Screen.Signup.route || 
                     currentRoute == Screen.Splash.route) {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
             } else {
@@ -44,7 +53,7 @@ fun App() {
                     currentRoute != Screen.ForgotPassword.route &&
                     currentRoute != Screen.OTPVerification.route) {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
+                        popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
             }
@@ -117,7 +126,6 @@ fun App() {
                     onNavigateToSOS = { navController.navigate(Screen.SOS.route) },
                     onNavigateToHistory = { navController.navigate(Screen.LocationHistory.route) },
                     onNavigateToVoiceNotes = { navController.navigate(Screen.VoiceNotes.route) },
-                    onNavigateToFakeCall = { navController.navigate(Screen.FakeCall.route) },
                     onNavigateToLiveTracking = { navController.navigate(Screen.LiveTracking.route) },
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                     onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
@@ -142,7 +150,6 @@ fun App() {
             composable(Screen.SafetyTimer.route) { SafetyTimerScreen(onBack = { navController.popBackStack() }) }
             composable(Screen.LocationHistory.route) { LocationHistoryScreen(onBack = { navController.popBackStack() }) }
             composable(Screen.VoiceNotes.route) { EmergencyVoiceNotesScreen(onBack = { navController.popBackStack() }) }
-            composable(Screen.FakeCall.route) { FakeCallScreen(onBack = { navController.popBackStack() }) }
             composable(Screen.LiveTracking.route) { LiveTrackingScreen(onBack = { navController.popBackStack() }) }
             composable(Screen.EmergencyContacts.route) { EmergencyContactsScreen(onBack = { navController.popBackStack() }) }
             

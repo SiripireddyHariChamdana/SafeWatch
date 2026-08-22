@@ -93,15 +93,15 @@ fun SignupScreenContent(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            ShadowGuardTextField(fullName, { fullName = it }, "Full Name", Icons.Default.Person)
+            SafeWatchTextField(fullName, { fullName = it }, "Full Name", Icons.Default.Person)
             Spacer(modifier = Modifier.height(16.dp))
-            ShadowGuardTextField(email, { email = it }, "Email Address", Icons.Default.Email, keyboardType = KeyboardType.Email)
+            SafeWatchTextField(email, { email = it }, "Email Address", Icons.Default.Email, keyboardType = KeyboardType.Email)
             Spacer(modifier = Modifier.height(16.dp))
-            ShadowGuardTextField(phone, { phone = it }, "Phone Number", Icons.Default.Phone, keyboardType = KeyboardType.Phone)
+            SafeWatchTextField(phone, { phone = it }, "Phone Number", Icons.Default.Phone, keyboardType = KeyboardType.Phone)
             Spacer(modifier = Modifier.height(16.dp))
-            ShadowGuardTextField(password, { password = it }, "Password", Icons.Default.Lock, isPassword = true, passwordVisible = passwordVisible, onVisibilityToggle = { passwordVisible = !passwordVisible })
+            SafeWatchTextField(password, { password = it }, "Password", Icons.Default.Lock, isPassword = true, passwordVisible = passwordVisible, onVisibilityToggle = { passwordVisible = !passwordVisible })
             Spacer(modifier = Modifier.height(16.dp))
-            ShadowGuardTextField(confirmPassword, { confirmPassword = it }, "Confirm Password", Icons.Default.Lock, isPassword = true, passwordVisible = passwordVisible, onVisibilityToggle = { passwordVisible = !passwordVisible })
+            SafeWatchTextField(confirmPassword, { confirmPassword = it }, "Confirm Password", Icons.Default.Lock, isPassword = true, passwordVisible = passwordVisible, onVisibilityToggle = { passwordVisible = !passwordVisible })
 
             if (error != null) {
                 Text(

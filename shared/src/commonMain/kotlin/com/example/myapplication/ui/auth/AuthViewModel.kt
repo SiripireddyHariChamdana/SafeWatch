@@ -56,6 +56,15 @@ class AuthViewModel : ViewModel() {
     }
 
     private fun observeAuthStatus() {
+        // Start a fallback timer to ensure the app doesn't hang on splash
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(8000)
+            if (!_isInitialSessionLoaded.value) {
+                println("⚠️ Auth: Session Load Timeout - Forcing UI Ready")
+                _isInitialSessionLoaded.value = true
+            }
+        }
+
         client.auth.sessionStatus.onEach { status ->
             println("🔑 Auth: Status Update: $status")
             when (status) {
@@ -63,11 +72,8 @@ class AuthViewModel : ViewModel() {
                     val userId = status.session.user?.id ?: ""
                     if (userId.isNotEmpty()) {
                         println("🔑 Auth: Confirmed Logged In ($userId)")
-                        println("AUTH_USER_ID: $userId")
                         
-                        // Save to SharedPreferences for background service
                         getPlatform().persistUserId(userId)
-
                         currentSyncUserId = userId
                         fetchUserProfile(userId)
                         fetchUserSettings(userId)
@@ -227,31 +233,31 @@ class AuthViewModel : ViewModel() {
     }
 
     fun login(emailOrPhone: String, password: String, onSuccess: () -> Unit) {
+        val cleanEmailOrPhone = emailOrPhone.trim()
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
             try {
-                val isEmail = emailOrPhone.contains("@")
+                val isEmail = cleanEmailOrPhone.contains("@")
                 withContext(Dispatchers.IO) {
                     if (isEmail) {
                         client.auth.signInWith(Email) {
-                            this.email = emailOrPhone
+                            this.email = cleanEmailOrPhone
                             this.password = password
                         }
                     } else {
-                        val cleanPhone = if (emailOrPhone.startsWith("+")) emailOrPhone else "+$emailOrPhone"
+                        val cleanPhone = if (cleanEmailOrPhone.startsWith("+")) cleanEmailOrPhone else "+$cleanEmailOrPhone"
                         client.auth.signInWith(Phone) {
                             this.phone = cleanPhone
                             this.password = password
                         }
                     }
                 }
-                // Don't set _isLoggedIn here. The observeAuthStatus will catch the event.
                 println("🔑 Login Triggered Successfully")
                 onSuccess()
             } catch (e: Exception) {
                 println("❌ Login Error: ${e.message}")
-                _error.value = "Login failed: ${e.message}"
+                _error.value = e.message ?: "Login failed"
             } finally {
                 _loading.value = false
             }
@@ -343,8 +349,8 @@ class AuthViewModel : ViewModel() {
                         // Email is slow, keep it in background
                         getPlatform().sendEmail(
                             email.trim(),
-                            "Welcome to ShadowGuard",
-                            "Registration Successful: Hello $fullName, you have been successfully registered to ShadowGuard."
+                            "Welcome to SafeWatch",
+                            "Registration Successful: Hello $fullName, you have been successfully registered to SafeWatch."
                         )
                     }
                 }
@@ -378,7 +384,7 @@ class AuthViewModel : ViewModel() {
                 // Calling Platform abstraction which calls Java on Android
                 getPlatform().sendEmail(
                     email,
-                    "ShadowGuard Recovery Code",
+                    "SafeWatch Recovery Code",
                     "Your verification code is: $otp"
                 )
                 

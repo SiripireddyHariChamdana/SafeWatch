@@ -13,11 +13,10 @@ interface Platform {
     @Composable
     fun MapView(modifier: Modifier, latitude: Double, longitude: Double, accuracy: Float)
 
-    fun scheduleFakeCall(secondsFromNow: Long)
+    @Composable
+    fun HistoryMapView(modifier: Modifier, points: List<com.example.myapplication.data.model.HistoryPoint>)
 
     fun triggerEmergencyProtocol()
-
-    fun stopFakeCallMedia()
 
     fun sendNativeSms(phoneNumber: String, message: String)
     fun sendEmail(to: String, subject: String, body: String)
@@ -37,6 +36,8 @@ interface Platform {
     fun ImagePicker(onImagePicked: (ByteArray) -> Unit)
 
     fun persistUserId(userId: String)
+    fun persistSetting(key: String, value: String)
+    fun getPersistedSetting(key: String, defaultValue: String): String
     fun refreshSafetyServiceSettings()
 }
 

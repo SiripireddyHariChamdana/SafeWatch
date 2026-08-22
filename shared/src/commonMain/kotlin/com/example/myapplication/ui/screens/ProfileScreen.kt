@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.*
 import com.example.myapplication.ui.auth.AuthViewModel
-import com.example.myapplication.getPlatform
 import com.example.myapplication.data.remote.SupabaseManager
 import kotlinx.coroutines.launch
 import io.kamel.image.KamelImage
@@ -69,7 +68,7 @@ fun ProfileScreen(
     }
 
     if (triggerImagePicker) {
-        getPlatform().ImagePicker { bytes: ByteArray ->
+        com.example.myapplication.getPlatform().ImagePicker { bytes: ByteArray ->
             triggerImagePicker = false
             scope.launch {
                 uploadProgress = true
@@ -138,11 +137,19 @@ fun ProfileScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (!avatarUrl.isNullOrEmpty()) {
+                            println("📸 ProfileScreen: Displaying Avatar: $avatarUrl")
                             KamelImage(
                                 resource = asyncPainterResource(data = avatarUrl!!),
                                 contentDescription = null,
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                onLoading = { progress ->
+                                    CircularProgressIndicator(progress = { progress }, color = NeonBlue)
+                                },
+                                onFailure = { exception ->
+                                    println("❌ KamelImage Failure: ${exception.message}")
+                                    Icon(Icons.Default.Error, null, tint = Color.Red)
+                                }
                             )
                         } else {
                             Icon(Icons.Default.Person, null, tint = NeonBlue, modifier = Modifier.size(64.dp))
@@ -161,13 +168,13 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
                 
-                ShadowGuardTextField(fullName, { fullName = it }, "Full Name", Icons.Default.Badge)
+                SafeWatchTextField(fullName, { fullName = it }, "Full Name", Icons.Default.Badge)
                 Spacer(modifier = Modifier.height(16.dp))
-                ShadowGuardTextField(phone, { phone = it }, "Phone Number", Icons.Default.Phone)
+                SafeWatchTextField(phone, { phone = it }, "Phone Number", Icons.Default.Phone)
                 Spacer(modifier = Modifier.height(16.dp))
-                ShadowGuardTextField(dob, { dob = it }, "Date of Birth", Icons.Default.CalendarToday)
+                SafeWatchTextField(dob, { dob = it }, "Date of Birth", Icons.Default.CalendarToday)
                 Spacer(modifier = Modifier.height(16.dp))
-                ShadowGuardTextField(address, { address = it }, "Home Address", Icons.Default.Home)
+                SafeWatchTextField(address, { address = it }, "Home Address", Icons.Default.Home)
 
                 Spacer(modifier = Modifier.height(48.dp))
 

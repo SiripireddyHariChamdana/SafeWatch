@@ -16,7 +16,10 @@ data class UserProfile(
 
 @Serializable
 data class HistoryPoint(
+    val id: String? = null,
     val latitude: Double,
     val longitude: Double,
-    val captured_at: String
+    val accuracy: Double? = null,
+    val battery_level: Int? = null,
+    val recorded_at: String
 )

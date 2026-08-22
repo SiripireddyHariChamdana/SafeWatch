@@ -38,7 +38,7 @@ kotlin {
             implementation(libs.jetbrains.navigation.compose)
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.8.2")
-            implementation("media.kamel:kamel-image:0.9.3")
+            implementation("media.kamel:kamel-image:1.0.3")
         }
         
         androidMain.dependencies {

@@ -57,7 +57,7 @@ private val EmergencyColorScheme = darkColorScheme(
 )
 
 @Composable
-fun ShadowGuardTheme(
+fun SafeWatchTheme(
     userTheme: UserTheme = UserTheme.FUTURISTIC_DARK,
     content: @Composable () -> Unit
 ) {

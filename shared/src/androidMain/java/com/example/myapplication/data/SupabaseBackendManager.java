@@ -50,7 +50,7 @@ public class SupabaseBackendManager {
         } catch (Exception e) {}
     }
 
-    public static void logHistory(String userId, double lat, double lng) {
+    public static void logHistory(String userId, double lat, double lng, double accuracy, int batteryLevel, String recordedAt) {
         if (userId == null || userId.isEmpty()) return;
         System.out.println("🚀 JavaBackend: Logging history point...");
         try {
@@ -58,6 +58,9 @@ public class SupabaseBackendManager {
             json.put("user_id", userId);
             json.put("latitude", lat);
             json.put("longitude", lng);
+            json.put("accuracy", accuracy);
+            json.put("battery_level", batteryLevel);
+            json.put("recorded_at", recordedAt);
 
             RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json; charset=utf-8"));
             Request request = new Request.Builder()
@@ -110,7 +113,7 @@ public class SupabaseBackendManager {
         });
     }
 
-    public static void uploadEvidence(String userId, String fileName, byte[] data) {
+    public static void uploadEvidence(String userId, String fileName, byte[] data, String createdAt) {
         // userId and timestamp based path as requested
         String timestamp = String.valueOf(System.currentTimeMillis());
         String storagePath = userId + "/" + timestamp + ".m4a";
@@ -142,7 +145,7 @@ public class SupabaseBackendManager {
                 if (response.isSuccessful()) {
                     System.out.println("UPLOAD_SUCCESS: " + storagePath);
                     // Store metadata in vault after successful storage upload
-                    registerInVault(userId, fileName, storagePath);
+                    registerInVault(userId, fileName, storagePath, createdAt);
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "No error body";
                     System.out.println("UPLOAD_FAILED: HTTP " + response.code() + " - " + errorBody);
@@ -161,12 +164,13 @@ public class SupabaseBackendManager {
         return url;
     }
 
-    private static void registerInVault(String userId, String fileName, String storagePath) {
+    private static void registerInVault(String userId, String fileName, String storagePath, String createdAt) {
         try {
             JSONObject json = new JSONObject();
             json.put("user_id", userId);
             json.put("file_name", fileName);
             json.put("storage_path", storagePath);
+            json.put("created_at", createdAt);
 
             RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json; charset=utf-8"));
             Request request = new Request.Builder()

@@ -73,7 +73,7 @@ fun ResetPasswordScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            ShadowGuardTextField(
+            SafeWatchTextField(
                 value = newPassword,
                 onValueChange = { newPassword = it },
                 placeholder = "New Password",
@@ -85,7 +85,7 @@ fun ResetPasswordScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ShadowGuardTextField(
+            SafeWatchTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 placeholder = "Confirm New Password",

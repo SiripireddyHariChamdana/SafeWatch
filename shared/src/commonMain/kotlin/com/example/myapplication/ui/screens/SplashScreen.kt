@@ -57,7 +57,7 @@ fun SplashScreen(onNext: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             
             Text(
-                text = "ShadowGuard",
+                text = "SafeWatch",
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
@@ -65,7 +65,7 @@ fun SplashScreen(onNext: () -> Unit) {
             )
             
             Text(
-                text = "YOUR DIGITAL SHIELD",
+                text = "PERSONAL SAFETY SYSTEM",
                 color = NeonBlue,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,

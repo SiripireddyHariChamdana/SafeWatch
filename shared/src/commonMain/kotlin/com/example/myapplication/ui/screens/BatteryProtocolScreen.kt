@@ -133,7 +133,7 @@ fun BatteryProtocolScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "When your battery reaches the threshold, ShadowGuard will perform a high-accuracy GPS sync and notify your emergency contacts that your phone is about to die.",
+                        "When your battery reaches the threshold, SafeWatch will perform a high-accuracy GPS sync and notify your emergency contacts that your phone is about to die.",
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 11.sp,
                         lineHeight = 16.sp

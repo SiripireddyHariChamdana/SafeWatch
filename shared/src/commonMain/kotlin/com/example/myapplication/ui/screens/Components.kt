@@ -30,7 +30,7 @@ import com.example.myapplication.ui.theme.NeonPurple
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShadowGuardTextField(
+fun SafeWatchTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,

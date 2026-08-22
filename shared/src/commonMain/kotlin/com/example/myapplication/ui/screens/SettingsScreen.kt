@@ -84,7 +84,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("ShadowGuard v1.5.0", color = Color.White.copy(alpha = 0.3f), fontSize = 12.sp)
+                Text("SafeWatch v1.5.0", color = Color.White.copy(alpha = 0.3f), fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(100.dp))
             }
         }

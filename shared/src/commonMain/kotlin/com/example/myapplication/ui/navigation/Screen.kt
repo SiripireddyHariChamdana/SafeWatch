@@ -15,7 +15,6 @@ sealed class Screen(val route: String) {
     object LocationHistory : Screen("location_history")
     object Profile : Screen("profile")
     object VoiceNotes : Screen("voice_notes")
-    object FakeCall : Screen("fake_call")
     object LiveTracking : Screen("live_tracking")
     object Settings : Screen("settings")
     object ThemeCustomization : Screen("theme_customization")

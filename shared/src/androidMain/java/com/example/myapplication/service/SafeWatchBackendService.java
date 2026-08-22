@@ -39,8 +39,17 @@ public class SafeWatchBackendService extends Service {
     private String currentUserId = null;
     private double lastHistoryLat = 0;
     private double lastHistoryLng = 0;
+    private long lastHistoryTime = 0;
     private int screenToggleCount = 0;
     private long lastScreenToggleTime = 0;
+
+    private boolean isPowerTriggerEnabled() {
+        return getSharedPreferences("SafeWatch", MODE_PRIVATE).getBoolean("power_trigger_enabled", true);
+    }
+
+    private boolean isShakeTriggerEnabled() {
+        return getSharedPreferences("SafeWatch", MODE_PRIVATE).getBoolean("shake_trigger_enabled", true);
+    }
 
     private final BroadcastReceiver smsRelayReceiver = new BroadcastReceiver() {
         @Override
@@ -56,13 +65,14 @@ public class SafeWatchBackendService extends Service {
     private final BroadcastReceiver hardwareTriggerReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (!isPowerTriggerEnabled()) return;
             String action = intent.getAction();
             if (Intent.ACTION_SCREEN_ON.equals(action) || Intent.ACTION_SCREEN_OFF.equals(action)) {
                 long now = System.currentTimeMillis();
                 if (now - lastScreenToggleTime > 5000) screenToggleCount = 0;
                 lastScreenToggleTime = now;
                 screenToggleCount++;
-                if (screenToggleCount >= 5) {
+                if (screenToggleCount >= 3) {
                     screenToggleCount = 0;
                     vibrateFeedback();
                     triggerEmergencyFlow("HARDWARE_BUTTON");
@@ -89,8 +99,10 @@ public class SafeWatchBackendService extends Service {
         
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         shakeDetector = new ShakeDetector(() -> {
-            vibrateFeedback();
-            triggerEmergencyFlow("SHAKE");
+            if (isShakeTriggerEnabled()) {
+                vibrateFeedback();
+                triggerEmergencyFlow("SHAKE");
+            }
             return kotlin.Unit.INSTANCE;
         });
         
@@ -123,15 +135,35 @@ public class SafeWatchBackendService extends Service {
     private void processLocationUpdate(Location loc) {
         double lat = loc.getLatitude();
         double lng = loc.getLongitude();
+        double acc = loc.getAccuracy();
         LocationFlow.INSTANCE.updateLocation(lat, lng, loc.getAccuracy());
 
         if (currentUserId != null) {
             SupabaseBackendManager.syncLocation(currentUserId, lat, lng);
+            
+            long now = System.currentTimeMillis();
             float[] res = new float[1];
             Location.distanceBetween(lastHistoryLat, lastHistoryLng, lat, lng, res);
-            if (lastHistoryLat == 0 || res[0] > 2.0) {
-                lastHistoryLat = lat; lastHistoryLng = lng;
-                SupabaseBackendManager.logHistory(currentUserId, lat, lng);
+            
+            // Production-ready sampling: 15 meters OR 30 seconds
+            boolean shouldLog = lastHistoryTime == 0 || res[0] > 15.0 || (now - lastHistoryTime) > 30000;
+            
+            if (shouldLog) {
+                lastHistoryLat = lat; 
+                lastHistoryLng = lng;
+                lastHistoryTime = now;
+                
+                int battery = -1;
+                Intent batteryIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                if (batteryIntent != null) {
+                    int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                    int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                    if (level != -1 && scale != -1) battery = (int) ((level / (float) scale) * 100);
+                }
+                
+                String isoNow = com.example.myapplication.util.LocationFlowKt.formatIsoNow();
+                SupabaseBackendManager.logHistory(currentUserId, lat, lng, acc, battery, isoNow);
+                Log.i("SafeWatchService", "✅ History point logged: " + lat + ", " + lng + " at " + isoNow);
             }
         }
     }
@@ -141,26 +173,60 @@ public class SafeWatchBackendService extends Service {
         if (currentUserId == null) currentUserId = getSharedPreferences("SafeWatch", MODE_PRIVATE).getString("uid", null);
         if (currentUserId == null) return;
 
-        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-            if (location != null) SupabaseBackendManager.createSOSAlert(currentUserId, location.getLatitude(), location.getLongitude(), type);
-        });
+        Log.i("SafeWatchService", "🚨 Emergency Flow Triggered: " + type);
+
+        // Try to get fresh location for the alert
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener(location -> {
+                if (location == null) {
+                    // Fallback to the latest location from our reactive flow
+                    com.example.myapplication.util.LocationUpdate update = LocationFlow.INSTANCE.getCurrentLocation().getValue();
+                    if (update != null) {
+                        Log.i("SafeWatchService", "📍 Using LocationFlow fallback for SOS");
+                        SupabaseBackendManager.createSOSAlert(currentUserId, update.getLatitude(), update.getLongitude(), type);
+                        sendEmergencySms(update.getLatitude(), update.getLongitude());
+                    } else {
+                        // Last resort: getLastLocation (cached)
+                        fusedLocationClient.getLastLocation().addOnSuccessListener(lastLoc -> {
+                            if (lastLoc != null) {
+                                Log.i("SafeWatchService", "📍 Using LastLocation last resort for SOS");
+                                SupabaseBackendManager.createSOSAlert(currentUserId, lastLoc.getLatitude(), lastLoc.getLongitude(), type);
+                                sendEmergencySms(lastLoc.getLatitude(), lastLoc.getLongitude());
+                            }
+                        });
+                    }
+                } else {
+                    Log.i("SafeWatchService", "📍 Using Fresh Location for SOS");
+                    SupabaseBackendManager.createSOSAlert(currentUserId, location.getLatitude(), location.getLongitude(), type);
+                    sendEmergencySms(location.getLatitude(), location.getLongitude());
+                }
+            });
 
         Platform_androidKt.getPlatform().startManualRecording();
-        SupabaseBackendManager.fetchEmergencyContacts(currentUserId, phoneNumbers -> {
-            String link = "https://majestic-pudding-3979e7.netlify.app/?id=" + currentUserId;
-            String msg = "🚨 EMERGENCY SOS! Track me: " + link;
-            for (String p : phoneNumbers) if (p != null) Platform_androidKt.getPlatform().sendNativeSms(p, msg);
-        });
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             String path = Platform_androidKt.getPlatform().stopManualRecording();
             if (path != null && currentUserId != null) {
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     byte[] b = Platform_androidKt.getPlatform().readFileBytes(path);
-                    if (b != null && b.length > 0) SupabaseBackendManager.uploadEvidence(currentUserId, "SOS_" + System.currentTimeMillis() + ".m4a", b);
+                    String isoNow = com.example.myapplication.util.LocationFlowKt.formatIsoNow();
+                    if (b != null && b.length > 0) SupabaseBackendManager.uploadEvidence(currentUserId, "SOS_" + System.currentTimeMillis() + ".m4a", b, isoNow);
                 }, 1000);
             }
-        }, 15000);
+        }, 60000);
+    }
+
+    private void sendEmergencySms(double lat, double lng) {
+        SupabaseBackendManager.fetchEmergencyContacts(currentUserId, phoneNumbers -> {
+            String link = "https://majestic-pudding-3979e7.netlify.app/?id=" + currentUserId;
+            String msg = "🚨 EMERGENCY SOS! I need help. My current location is: " + lat + "," + lng + ". Track me live: " + link;
+            for (String p : phoneNumbers) {
+                if (p != null) {
+                    Log.i("SafeWatchService", "📠 Sending SOS SMS to " + p);
+                    Platform_androidKt.getPlatform().sendNativeSms(p, msg);
+                }
+            }
+        });
     }
 
     private void vibrateFeedback() {
@@ -206,7 +272,7 @@ public class SafeWatchBackendService extends Service {
             NotificationManager nm = getSystemService(NotificationManager.class);
             if (nm.getNotificationChannel(id) == null) nm.createNotificationChannel(new NotificationChannel(id, "Safety Active", NotificationManager.IMPORTANCE_LOW));
         }
-        return new NotificationCompat.Builder(this, id).setContentTitle("SafeWatch Backend Active").setSmallIcon(android.R.drawable.ic_menu_mylocation).build();
+        return new NotificationCompat.Builder(this, id).setContentTitle("SafeWatch Active").setSmallIcon(android.R.drawable.ic_menu_mylocation).build();
     }
 
     @Override

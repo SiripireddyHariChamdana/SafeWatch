@@ -94,7 +94,7 @@ fun ForgotPasswordContent(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            ShadowGuardTextField(
+            SafeWatchTextField(
                 value = email,
                 onValueChange = { email = it },
                 placeholder = "Email Address",

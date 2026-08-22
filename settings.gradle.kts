@@ -22,7 +22,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ShadowGuard"
+rootProject.name = "SafeWatch"
 include(":app")
 include(":shared")
  

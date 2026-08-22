@@ -13,3 +13,5 @@ object LocationFlow {
         _currentLocation.value = LocationUpdate(lat, lng, acc)
     }
 }
+
+fun formatIsoNow(): String = kotlinx.datetime.Clock.System.now().toString()

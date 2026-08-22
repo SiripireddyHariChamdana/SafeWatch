@@ -2,10 +2,11 @@ name: SafeWatch Live Web Deployment & Selenium E2E Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
+
 
 jobs:
   deploy-and-test:

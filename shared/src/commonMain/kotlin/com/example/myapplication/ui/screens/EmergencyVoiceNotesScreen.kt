@@ -30,6 +30,9 @@ import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -139,7 +142,7 @@ fun EmergencyVoiceNotesScreen(onBack: () -> Unit) {
                         val url = SupabaseManager.getPlayableUrl(recording.storage_path)
                         EvidenceCard(
                             fileName = recording.file_name,
-                            date = recording.created_at?.take(16)?.replace("T", " ") ?: "Date N/A",
+                            date = recording.created_at?.let { formatTime(it) } ?: "Date N/A",
                             isPlaying = currentPlayingUrl == url && isAudioPlaying,
                             onPlay = {
                                 if (currentPlayingUrl != url) {
@@ -180,10 +183,11 @@ fun EmergencyVoiceNotesScreen(onBack: () -> Unit) {
                                 val bytes = getPlatform().readFileBytes(path)
                                 if (bytes != null && bytes.isNotEmpty()) {
                                     val timestamp = Clock.System.now().toEpochMilliseconds()
+                                    val isoNow = kotlinx.datetime.Clock.System.now().toString()
                                     val name = "Manual_Note_$timestamp.m4a"
                                     println("🚀 VoiceNotes: Uploading $name...")
                                     
-                                    SupabaseManager.uploadEvidence(userId, name, bytes)
+                                    SupabaseManager.uploadEvidence(userId, name, bytes, isoNow)
                                     println("✅ VoiceNotes: Sync initiated via Java")
                                     fetchRecordings()
                                 } else {
@@ -269,5 +273,20 @@ fun EvidenceCard(fileName: String, date: String, isPlaying: Boolean = false, onP
                 Icon(Icons.Default.Delete, null, tint = RedSOS.copy(alpha = 0.7f))
             }
         }
+    }
+}
+
+private fun formatTime(iso: String): String {
+    return try {
+        val sanitized = iso.replace(" ", "T")
+        val instant = Instant.parse(sanitized)
+        val lt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        val hour = if (lt.hour % 12 == 0) 12 else lt.hour % 12
+        val ampm = if (lt.hour < 12) "AM" else "PM"
+        
+        val month = lt.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+        "${lt.dayOfMonth} $month ${lt.year}, ${hour}:${lt.minute.toString().padStart(2, '0')} $ampm"
+    } catch (e: Exception) {
+        iso.take(16)
     }
 }

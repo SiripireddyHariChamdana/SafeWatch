@@ -20,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.example.myapplication.service.FakeCallReceiver
 import com.example.myapplication.service.SafeWatchBackendService
 import com.example.myapplication.util.EmailBackendUtility
 import com.example.myapplication.util.LocationFlow
@@ -154,14 +153,100 @@ class AndroidPlatform(private val context: Context) : Platform {
         )
     }
 
-    override fun scheduleFakeCall(secondsFromNow: Long) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, FakeCallReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context, 1001, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    @Composable
+    override fun HistoryMapView(modifier: Modifier, points: List<com.example.myapplication.data.model.HistoryPoint>) {
+        var webViewRef: WebView? by remember { mutableStateOf(null) }
+
+        val pointsJson = points.map { 
+            "{\"lat\": ${it.latitude}, \"lng\": ${it.longitude}}" 
+        }.toString()
+
+        val mapHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                <style>
+                    html, body { height: 100%; margin: 0; padding: 0; background-color: #0B0E14; overflow: hidden; }
+                    #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #0B0E14; z-index: 1; }
+                    .marker-pin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+                    .marker-start { background: #4CAF50; }
+                    .marker-end { background: #F44336; }
+                </style>
+            </head>
+            <body>
+                <div id="map"></div>
+                <script>
+                    var map; var polyline; var markers = [];
+                    function init() {
+                        if (typeof L === 'undefined') { setTimeout(init, 500); return; }
+                        map = L.map('map', { zoomControl: false, attributionControl: false });
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+                        updatePoints($pointsJson);
+                    }
+                    function updatePoints(points) {
+                        if (!map) return;
+                        if (polyline) map.removeLayer(polyline);
+                        markers.forEach(m => map.removeLayer(m));
+                        markers = [];
+
+                        if (points.length > 0) {
+                            var latlngs = points.map(p => [p.lat, p.lng]);
+                            if (points.length > 1) {
+                                polyline = L.polyline(latlngs, { color: '#00F2FF', weight: 4, opacity: 0.8 }).addTo(map);
+                            }
+                            points.forEach((p, i) => {
+                                if (i === 0 || i === points.length - 1) {
+                                    var className = i === 0 ? "marker-pin marker-start" : "marker-pin marker-end";
+                                    var marker = L.marker([p.lat, p.lng], {
+                                        icon: L.divIcon({ className: 'custom-div-icon', html: '<div class="' + className + '"></div>', iconSize: [12, 12], iconAnchor: [6, 6] })
+                                    }).addTo(map);
+                                    markers.push(marker);
+                                }
+                            });
+                            var bounds = L.latLngBounds(latlngs);
+                            map.fitBounds(bounds, { padding: [50, 50] });
+                        }
+                    }
+                    init();
+                </script>
+            </body>
+            </html>
+        """.trimIndent()
+
+        LaunchedEffect(points) {
+            if (webViewRef != null && points.isNotEmpty()) {
+                val json = points.map { "{\"lat\": ${it.latitude}, \"lng\": ${it.longitude}}" }.toString()
+                webViewRef?.evaluateJavascript("updatePoints($json)", null)
+            }
+        }
+
+        AndroidView(
+            modifier = modifier,
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    setBackgroundColor(android.graphics.Color.parseColor("#0B0E14"))
+                    settings.apply {
+                        javaScriptEnabled = true
+                        domStorageEnabled = true
+                        databaseEnabled = true
+                        mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    }
+                    loadDataWithBaseURL("https://safewatch.app", mapHtml, "text/html", "UTF-8", null)
+                    webViewRef = this
+                }
+            },
+            update = { view ->
+                webViewRef = view
+            }
         )
-        val triggerTime = SystemClock.elapsedRealtime() + (secondsFromNow * 1000)
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerTime, pendingIntent)
     }
 
     override fun triggerEmergencyProtocol() {
@@ -171,10 +256,6 @@ class AndroidPlatform(private val context: Context) : Platform {
         } else {
             context.startService(intent)
         }
-    }
-
-    override fun stopFakeCallMedia() {
-        FakeCallReceiver.stopFakeCall()
     }
 
     override fun sendNativeSms(phoneNumber: String, message: String) {
@@ -363,6 +444,18 @@ class AndroidPlatform(private val context: Context) : Platform {
             .edit()
             .putString("uid", userId)
             .apply()
+    }
+
+    override fun persistSetting(key: String, value: String) {
+        context.getSharedPreferences("SafeWatch", Context.MODE_PRIVATE)
+            .edit()
+            .putString(key, value)
+            .apply()
+    }
+
+    override fun getPersistedSetting(key: String, defaultValue: String): String {
+        return context.getSharedPreferences("SafeWatch", Context.MODE_PRIVATE)
+            .getString(key, defaultValue) ?: defaultValue
     }
 
     override fun refreshSafetyServiceSettings() {

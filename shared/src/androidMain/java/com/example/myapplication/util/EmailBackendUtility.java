@@ -13,7 +13,7 @@ public class EmailBackendUtility {
     private static final OkHttpClient client = new OkHttpClient();
 
     public static void sendOtpEmail(String to, String otp) {
-        String json = "{\"from\":\"ShadowGuard <onboarding@resend.dev>\", \"to\":\"" + to + "\", \"subject\":\"Safety Verification\", \"html\":\"Your code is: " + otp + "\"}";
+        String json = "{\"from\":\"SafeWatch <onboarding@resend.dev>\", \"to\":\"" + to + "\", \"subject\":\"Safety Verification\", \"html\":\"Your code is: " + otp + "\"}";
         RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
         Request request = new Request.Builder()
                 .url(API_URL)

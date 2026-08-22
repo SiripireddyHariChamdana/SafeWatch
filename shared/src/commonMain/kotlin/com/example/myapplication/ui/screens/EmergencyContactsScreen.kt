@@ -144,14 +144,14 @@ fun AddContactDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit) {
         title = { Text("Add Emergency Contact", color = Color.White) },
         text = {
             Column {
-                ShadowGuardTextField(
+                SafeWatchTextField(
                     value = name,
                     onValueChange = { name = it },
                     placeholder = "Full Name",
                     icon = Icons.Default.Person
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                ShadowGuardTextField(
+                SafeWatchTextField(
                     value = phone,
                     onValueChange = { phone = it },
                     placeholder = "Phone Number",

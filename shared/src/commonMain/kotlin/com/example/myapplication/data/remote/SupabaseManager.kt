@@ -9,6 +9,7 @@ import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.annotations.SupabaseInternal
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.websocket.WebSockets
+import kotlinx.datetime.Clock
 
 import com.example.myapplication.data.SupabaseBackendManager
 
@@ -42,8 +43,8 @@ object SupabaseManager {
     }
 
     // Bridge to Java Backend Logic
-    fun uploadEvidence(userId: String, fileName: String, bytes: ByteArray) {
-        SupabaseBackendManager.uploadEvidence(userId, fileName, bytes)
+    fun uploadEvidence(userId: String, fileName: String, bytes: ByteArray, createdAt: String) {
+        SupabaseBackendManager.uploadEvidence(userId, fileName, bytes, createdAt)
     }
 
     fun getPlayableUrl(storagePath: String): String {
@@ -60,7 +61,7 @@ object SupabaseManager {
             ) {
                 upsert = true
             }
-            val url = client.storage.from("avatars").publicUrl(fileName)
+            val url = client.storage.from("avatars").publicUrl(fileName) + "?t=${Clock.System.now().toEpochMilliseconds()}"
             println("✅ SupabaseManager: Upload SUCCESS. URL: $url")
             url
         } catch (e: Exception) {

@@ -31,7 +31,6 @@ fun HomeScreen(
     onNavigateToSOS: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToVoiceNotes: () -> Unit,
-    onNavigateToFakeCall: () -> Unit,
     onNavigateToLiveTracking: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToProfile: () -> Unit,
@@ -42,8 +41,8 @@ fun HomeScreen(
     val locationUpdate by LocationFlow.currentLocation.collectAsState(null)
 
     // Handle Permissions Once on Home Screen Entry
-    getPlatform().PermissionManager {
-        getPlatform().startLocationService()
+    com.example.myapplication.getPlatform().PermissionManager {
+        com.example.myapplication.getPlatform().startLocationService()
     }
 
     Box(modifier = Modifier.fillMaxSize().background(DarkNavy)) {
@@ -66,7 +65,7 @@ fun HomeScreen(
             ) {
                 Column {
                     Text(
-                        text = "ShadowGuard",
+                        text = "SafeWatch",
                         color = NeonBlue,
                         fontSize = 38.sp,
                         fontWeight = FontWeight.Black,
@@ -134,10 +133,7 @@ fun HomeScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                FeatureGridCard("Voice Record", Icons.Default.Mic, NeonBlue, Modifier.weight(1f)) { onNavigateToVoiceNotes() }
-                FeatureGridCard("Fake Call", Icons.Default.Call, SuccessGreen, Modifier.weight(1f)) { onNavigateToFakeCall() }
-            }
+            FeatureGridCard("Voice Record", Icons.Default.Mic, NeonBlue, Modifier.fillMaxWidth()) { onNavigateToVoiceNotes() }
 
             Spacer(modifier = Modifier.height(120.dp))
         }
